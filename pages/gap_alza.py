@@ -49,9 +49,9 @@ def app_gap_alza():
     loading_placeholder.empty()
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pm40_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pm40.txt"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pm40.txt"
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga_h.txt"
+    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pga.txt"
+    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pga.txt"
 
     st.markdown("""
         <div style='text-align: left;'>
