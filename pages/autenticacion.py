@@ -1,7 +1,6 @@
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials,firestore
-from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
 import os
 
@@ -119,7 +118,7 @@ def login():
         if validar_usuario(usuario,contraseña):
             st.success("✅ ¡Bienvenido! Acceso autorizado.", icon="✅")
             st.balloons()
-            switch_page("pm40")
+            st.switch_page("pages/pm40.py")
             return True
         else:
             st.error("❌ Usuario o contraseña incorrectos. Intenta de nuevo.", icon="🚫")

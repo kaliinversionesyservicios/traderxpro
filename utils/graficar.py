@@ -2,16 +2,39 @@ import streamlit as st
 import pandas as pd
 from bokeh.plotting import figure, show, column
 from bokeh.models import DatetimeTickFormatter, NumeralTickFormatter, CategoricalAxis,FactorRange, Span
+from bokeh.models import LabelSet, ColumnDataSource
 
-def graficar(dfpl):
+
+def graficar(dfpl,title):
     dfpl.reset_index(drop=True, inplace=True)
     
+    #NOMBRE TIPO VELA
+    if title=="Caida Normal Caida Fuerte":
+        df_velas = dfpl[dfpl["tipo_vela"].notnull()].copy()
+        source_velas = ColumnDataSource(df_velas)
+
+        labels = LabelSet(
+            x='index',
+            y='Low',
+            text='tipo_vela',
+            level='glyph',
+            x_offset=0,
+            y_offset=-30,
+            angle=-0.8,
+            source=source_velas,
+            render_mode='canvas',
+            text_font_size="8pt",
+            text_align="center",
+            text_color="black"
+        )
+   
+
     inc = dfpl.query("Close>Open")
     dec = dfpl.query("Open>Close")
     TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
 
     p = figure(width=1000, height=500,
-            title="RCB",
+            title=title,
             background_fill_color="#efefef",
             tooltips=[("Index", "@index"),("datetime", "@Datetime_str"), ("Open", "@Open"), ("High","@High"), ("Low","@Low"), ("Close","@Close")]
             )
@@ -54,6 +77,10 @@ def graficar(dfpl):
         legend_label="SMA40",
         source=dfpl)
     
+    #TIPO VELA
+    if title=="Caida Normal Caida Fuerte":
+        p.add_layout(labels)
+
     slopeH=dfpl["sl_highs"].iloc[0]
 
     r_sq_h=dfpl["r_sq_h"].iloc[0]
@@ -81,7 +108,7 @@ def graficar(dfpl):
     entradas=dfpl[dfpl["isBreakOutIni"]==1]
     p.triangle(
         x=entradas.index,
-        y=entradas["Low"] - 2.5,  # un poco debajo del mínimo
+        y=entradas["Low"] - 0.07,  # un poco debajo del mínimo
         size=12,
         color="#184e77",
         legend_label="Entrada",
@@ -91,7 +118,7 @@ def graficar(dfpl):
     salidas=dfpl[dfpl["isBreakOutFinal"]==1]
     p.inverted_triangle(
         x=salidas.index,
-        y=salidas["High"] + 2.5,  # un poco encima del máximo
+        y=salidas["High"] + 0.07,  # un poco encima del máximo
         size=12,
         color="#3a0ca3",
         legend_label="Salida",
