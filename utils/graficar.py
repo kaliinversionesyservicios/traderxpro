@@ -105,7 +105,11 @@ def graficar(dfpl,title):
     legend_label="Slope High",
     source=dfpl)
     
-    entradas=dfpl[dfpl["isBreakOutIni"]==1]
+    if title=="Gap a la Alza":
+        entradas=dfpl[dfpl["indicador"]==1]
+    else:
+        entradas=dfpl[dfpl["isBreakOutIni"]==1]
+
     p.triangle(
         x=entradas.index,
         y=entradas["Low"] - 0.07,  # un poco debajo del mínimo
@@ -115,7 +119,11 @@ def graficar(dfpl,title):
         alpha=0.8
     )
     
-    salidas=dfpl[dfpl["isBreakOutFinal"]==1]
+    if title=="Gap a la Alza":
+        salidas=dfpl[dfpl["indicador"]==2]
+    else:
+        salidas=dfpl[dfpl["isBreakOutFinal"]==1]
+        
     p.inverted_triangle(
         x=salidas.index,
         y=salidas["High"] + 0.07,  # un poco encima del máximo
