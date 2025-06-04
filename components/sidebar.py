@@ -60,7 +60,8 @@ def generarSidebar():
         st.page_link("pages/pm40.py", label="⩚ Promedio Movil")
         st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura Bajista")
         st.page_link("pages/cncf.py", label="⩏ Caida Normal-Fuerte")
-        #st.page_link("pages/rsi_bollinger.py", label="RSI + Bollinger", icon="📈")
+        st.page_link("pages/gap_alza.py", label="⩚ Gap a la Alza")
+
 
     st.sidebar.markdown("<hr class='sidebar-separador'>", unsafe_allow_html=True)
 

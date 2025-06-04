@@ -10,7 +10,7 @@ from utils.proteger_pag import proteger_pagina
 
 proteger_pagina()
 
-def app_pm40():
+def app_gap_alza():
     generarSidebar()
     loading_placeholder = st.empty()
     spinner_css = """
@@ -63,7 +63,7 @@ def app_pm40():
                 -webkit-text-fill-color: transparent;
                 display: inline-block;
             '>
-                Estrategia Promedio Movil
+                Gap a la Alza
             </h1>
             <hr style='
                 border: none;
@@ -192,7 +192,7 @@ def app_pm40():
                 column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
-                graficar(dfpl,"Promedio Movil")
+                graficar(dfpl,"Gap a la Alza")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
@@ -360,4 +360,4 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
 
 # Para probar la función de inmediato
 if __name__ == "__main__":
-    app_pm40()
+    app_gap_alza()
