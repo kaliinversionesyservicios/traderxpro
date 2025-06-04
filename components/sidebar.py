@@ -5,6 +5,14 @@ def generarSidebar():
                 <style>
                     .st-emotion-cache-6qob1r {
                         width: 85%;
+                    background: 
+                        radial-gradient(circle at 30% 20%, rgba(29, 29, 29, 0.8) 0%, rgba(29, 29, 29, 0.6) 30%, transparent 80%),
+                        radial-gradient(circle at 70% 40%, rgba(29, 29, 29, 0.7) 10%, rgba(29, 29, 29, 0.5) 40%, transparent 85%),
+                        radial-gradient(circle at 50% 80%, rgba(29, 29, 29, 0.6) 5%, rgba(29, 29, 29, 0.4) 30%, transparent 90%),
+                        radial-gradient(circle at 40% 60%, rgba(34, 93, 58, 0.3) 5%, rgba(34, 93, 58, 0.15) 30%, transparent 85%),
+                        linear-gradient(45deg, rgba(29, 29, 29, 0.9) 0%, rgba(29, 29, 29, 0.7) 40%, rgba(34, 93, 58, 0.4) 100%),
+                        url('https://raw.githubusercontent.com/LinderCa/assets/refs/heads/main/fondo.png') no-repeat center center fixed !important;
+                        background-size: cover !important;
                     }
 
                     .stButton > button{
@@ -45,7 +53,7 @@ def generarSidebar():
         #st.page_link("pages/pm40.py", label="PM40", icon="⚙️")
         st.page_link("pages/pm40.py", label="⩚ Promedio Movil")
         st.page_link("pages/canal_bajista.py", label="Ϟ Ruptura Bajista")
-        st.page_link("pages/caida_normal.py", label="⩏ Caida Normal")
+        st.page_link("pages/cncf.py", label="⩏ Caida Normal-Fuerte")
         #st.page_link("pages/rsi_bollinger.py", label="RSI + Bollinger", icon="📈")
 
     st.sidebar.markdown("<hr class='sidebar-separador'>", unsafe_allow_html=True)

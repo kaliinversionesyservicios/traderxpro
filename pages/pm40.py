@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 import time
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+from datetime import date
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode,GridUpdateMode
 from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
+from utils.proteger_pag import proteger_pagina
 
+proteger_pagina()
 
 
 def app_pm40():
@@ -73,12 +76,14 @@ def app_pm40():
             '/>
         </div>
     """, unsafe_allow_html=True)
+    
     try:
         df_casos=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
         df_trades=pd.read_csv(trades,sep='\t')
 
-        st.dataframe(df_casos)
+        #st.dataframe(df_casos)
+        #st.dataframe(df_estadisticas)
         #Modificamos el tipo en datetime
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
@@ -105,7 +110,22 @@ def app_pm40():
         data = df_grilla[columns].copy()
         data.sort_values("EntryTime", ascending=False, inplace=True)
 
+        # Columas Auxiliares para pintar filas actaules de grilla
+        data["EntryDateTime"]=pd.to_datetime(data["EntryTime"])
+        data["EntryDate"]=data["EntryDateTime"].dt.date 
+        #Fecha de hoy
+        hoy=date.today()
+        data["EsHoy"]=data["EntryDate"]==hoy
+
+        # Convertir EntryTime y ExitTime a string con zona horaria
+        data["EntryTime"] = data["EntryTime"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
+        data["ExitTime"] = data["ExitTime"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
+
+        # Eliminar la columna auxiliar
+        data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
+
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
+
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
 
@@ -113,13 +133,21 @@ def app_pm40():
         with kpi_holder:
             mostrar_kpis_por_ticker(df_inicial, promedio=True,fecha=dict_fecha,data=data_mean)
         
-        #PRUEBA
-        #st.dataframe(df_casos) 
-
         # Mostrar grilla interactiva
         gb = GridOptionsBuilder.from_dataframe(data)
-        gb.configure_selection("single", use_checkbox=True)
         
+        # Usar JsCode para pintar filas donde EsHoy es True
+        row_style_jscode = JsCode("""
+        function(params) {
+            if (params.data.EsHoy) {
+                return { backgroundColor: 'rgba(255,200,150,0.3)', color: 'black' };
+            }
+            return {};
+        }
+        """)
+        gb.configure_grid_options(getRowStyle=row_style_jscode)
+
+        gb.configure_selection("single", use_checkbox=True)
         
         grid_options = gb.build()
 
@@ -129,8 +157,10 @@ def app_pm40():
             update_mode=GridUpdateMode.SELECTION_CHANGED,
             height=400,
             width='100%',
-            fit_columns_on_grid_load=True
+            fit_columns_on_grid_load=True,
+            allow_unsafe_jscode=True  # <- Necesario para usar JsCode
         )
+        
 
         selected = grid_response["selected_rows"]
 
@@ -163,7 +193,7 @@ def app_pm40():
                 column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
-                graficar(dfpl)
+                graficar(dfpl,"Promedio Movil")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
