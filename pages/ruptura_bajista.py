@@ -6,11 +6,12 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode,GridUpdateMode
 from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
+from utils.proteger_pag import proteger_pagina
 
+proteger_pagina()
 
-def app_canal_bajista():
+def app_ruptura_bajista():
     generarSidebar()
-    # Pantalla de carga
     loading_placeholder = st.empty()
     spinner_css = """
     <style>
@@ -51,7 +52,7 @@ def app_canal_bajista():
     url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cb_h.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas.csv"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades.csv"
-    #trade_urls = { }
+
     st.markdown("""
         <div style='text-align: left;'>
             <h1 style='
@@ -62,7 +63,7 @@ def app_canal_bajista():
                 -webkit-text-fill-color: transparent;
                 display: inline-block;
             '>
-                Estrategia Ruptura de Resistencia
+                Estrategia Promedio Movil
             </h1>
             <hr style='
                 border: none;
@@ -74,12 +75,14 @@ def app_canal_bajista():
             '/>
         </div>
     """, unsafe_allow_html=True)
+    
     try:
         df_casos=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
         df_trades=pd.read_csv(trades,sep='\t')
 
-        st.dataframe(df_casos)
+        #st.dataframe(df_casos)
+        #st.dataframe(df_estadisticas)
         #Modificamos el tipo en datetime
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
@@ -105,6 +108,7 @@ def app_canal_bajista():
         #columnas = ["Ticker", "EntryTime", "ExitTime","Duration","EntryPrice","ExitPrice",'Caso']
         data = df_grilla[columns].copy()
         data.sort_values("EntryTime", ascending=False, inplace=True)
+
         # Columas Auxiliares para pintar filas actaules de grilla
         data["EntryDateTime"]=pd.to_datetime(data["EntryTime"])
         data["EntryDate"]=data["EntryDateTime"].dt.date 
@@ -117,7 +121,7 @@ def app_canal_bajista():
         data["ExitTime"] = data["ExitTime"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
 
         # Eliminar la columna auxiliar
-        data.drop(columns=["EntryDateTime","EntryDate"], inplace=True)
+        data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
 
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
 
@@ -128,17 +132,14 @@ def app_canal_bajista():
         with kpi_holder:
             mostrar_kpis_por_ticker(df_inicial, promedio=True,fecha=dict_fecha,data=data_mean)
         
-        #PRUEBA
-        #st.dataframe(df_casos) 
-
-       # Mostrar grilla interactiva
+        # Mostrar grilla interactiva
         gb = GridOptionsBuilder.from_dataframe(data)
         
         # Usar JsCode para pintar filas donde EsHoy es True
         row_style_jscode = JsCode("""
         function(params) {
             if (params.data.EsHoy) {
-                return { backgroundColor: 'rgba(255,200,150,0.3)', color: 'black' };
+                return { backgroundColor: 'rgba(199, 249, 204,0.7)', color: 'black' };
             }
             return {};
         }
@@ -191,14 +192,11 @@ def app_canal_bajista():
                 column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
-                graficar(dfpl)
+                graficar(dfpl,"Ruptura de Canal Bajista")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
             st.warning("⚠️ No hay ninguna fila seleccionada.")
-
-        
-
     except Exception as e:
         st.error(f"❌ Error al cargar datos: {e}")
 
@@ -355,11 +353,11 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             <div class="kpi-card">
                 <div class="tooltip">Retorno porcentual promedio por trade</div>
                 <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio*100,2)}%</div>
+                <div class="kpi-value">{round(media_precio,2)*100}%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 # Para probar la función de inmediato
 if __name__ == "__main__":
-    app_canal_bajista()
+    app_ruptura_bajista()
