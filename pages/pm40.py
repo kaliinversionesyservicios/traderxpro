@@ -140,7 +140,7 @@ def app_pm40():
         row_style_jscode = JsCode("""
         function(params) {
             if (params.data.EsHoy) {
-                return { backgroundColor: 'rgba(255,200,150,0.3)', color: 'black' };
+                return { backgroundColor: 'rgba(199, 249, 204,0.7)', color: 'black' };
             }
             return {};
         }

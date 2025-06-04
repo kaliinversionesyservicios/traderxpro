@@ -3,9 +3,16 @@ import streamlit as st
 def generarSidebar():
     st.markdown("""
                 <style>
-                    .st-emotion-cache-6qob1r {
-                        width: 85%;
-                    background: 
+                    .stSidebar{
+                        width:400px;
+                    }
+                    
+                    .stSidebar  [data-testid="stSidebarHeader"]{
+
+                    }
+                    .stSidebar > [data-testid="stSidebarContent"]{
+                        width: 100%;
+                        background: 
                         radial-gradient(circle at 30% 20%, rgba(29, 29, 29, 0.8) 0%, rgba(29, 29, 29, 0.6) 30%, transparent 80%),
                         radial-gradient(circle at 70% 40%, rgba(29, 29, 29, 0.7) 10%, rgba(29, 29, 29, 0.5) 40%, transparent 85%),
                         radial-gradient(circle at 50% 80%, rgba(29, 29, 29, 0.6) 5%, rgba(29, 29, 29, 0.4) 30%, transparent 90%),
@@ -14,7 +21,6 @@ def generarSidebar():
                         url('https://raw.githubusercontent.com/LinderCa/assets/refs/heads/main/fondo.png') no-repeat center center fixed !important;
                         background-size: cover !important;
                     }
-
                     .stButton > button{
                         width: 100%;
                         margin:0px;
@@ -52,7 +58,7 @@ def generarSidebar():
     with st.sidebar.expander("📜 Estrategias"):
         #st.page_link("pages/pm40.py", label="PM40", icon="⚙️")
         st.page_link("pages/pm40.py", label="⩚ Promedio Movil")
-        st.page_link("pages/canal_bajista.py", label="Ϟ Ruptura Bajista")
+        st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura Bajista")
         st.page_link("pages/cncf.py", label="⩏ Caida Normal-Fuerte")
         #st.page_link("pages/rsi_bollinger.py", label="RSI + Bollinger", icon="📈")
 
