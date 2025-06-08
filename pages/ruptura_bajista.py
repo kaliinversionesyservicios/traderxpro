@@ -63,7 +63,7 @@ def app_ruptura_bajista():
                 -webkit-text-fill-color: transparent;
                 display: inline-block;
             '>
-                Estrategia Promedio Movil
+                Ruptura de Canal Bajista
             </h1>
             <hr style='
                 border: none;
@@ -353,7 +353,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             <div class="kpi-card">
                 <div class="tooltip">Retorno porcentual promedio por trade</div>
                 <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio,2)*100}%</div>
+                <div class="kpi-value">{round(media_precio*100,2)}%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)

@@ -49,7 +49,7 @@ def app_gap_alza():
     loading_placeholder.empty()
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga_h.txt"
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pga.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pga.txt"
 
@@ -353,7 +353,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             <div class="kpi-card">
                 <div class="tooltip">Retorno porcentual promedio por trade</div>
                 <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio,2)*100}%</div>
+                <div class="kpi-value">{round(media_precio*100,2)}%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)

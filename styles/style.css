@@ -4,6 +4,8 @@
     --secondayr-background-color: #212529;
     --text-color: #c7f9cc;
     --secondary-color:#80ed99;
+    --primary-font: 'Arial',sans-serif;
+    --secondary-font: 'Roboto',sans-serif;
 }
 
 /* Aseguramos que el contenedor principal ocupe todo el viewport */
@@ -21,9 +23,6 @@
     background-size: cover !important;
 }
 
-
-
-
 /*ESTILOS */
 .title_header{
     font-size: 200px;
@@ -32,6 +31,8 @@
     margin-bottom: 15px;
     white-space: pre-line;
     padding: 0 100px;
+    text-shadow: 5px 5px 10px #80ed99;
+    font-family: var(--primary-font);
 }
 
 .title_header > span{
@@ -63,4 +64,25 @@
 
 .stButton > button p{
     font-size: 20px;
+}
+
+.header{
+    width: 100%;
+    height: 50px;
+    position: absolute;
+    top: -50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header .header-img{
+    background-image: url("https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/refs/heads/main/tradingscanx.png"); /* Ajusta URL */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    /* height: 75px; Puedes ajustar esta altura según la imagen */
+    /*margin: 10px 0px*/
+    width: 150px;
+    height: 50px;
 }

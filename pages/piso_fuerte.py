@@ -7,12 +7,12 @@ from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
+from utils.lst_ticker import tickers
 
 proteger_pagina()
 
-def app_cncf():
+def app_piso_fuerte():
     generarSidebar()
-    # Pantalla de carga
     loading_placeholder = st.empty()
     spinner_css = """
     <style>
@@ -50,10 +50,10 @@ def app_cncf():
     loading_placeholder.empty()
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cncf_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cncf.txt"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_cncf.txt"
-    #trade_urls = { }
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pfuerte.txt"
+    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pfuerte.txt"
+    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pfuerte.txt"
+
     st.markdown("""
         <div style='text-align: left;'>
             <h1 style='
@@ -64,7 +64,7 @@ def app_cncf():
                 -webkit-text-fill-color: transparent;
                 display: inline-block;
             '>
-                Estrategia Caida Normal - Caida Fuerte
+                Piso Fuerte
             </h1>
             <hr style='
                 border: none;
@@ -76,12 +76,14 @@ def app_cncf():
             '/>
         </div>
     """, unsafe_allow_html=True)
+    
     try:
         df_casos=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
         df_trades=pd.read_csv(trades,sep='\t')
 
         #st.dataframe(df_casos)
+        #st.dataframe(df_estadisticas)
         #Modificamos el tipo en datetime
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
@@ -108,7 +110,7 @@ def app_cncf():
         data = df_grilla[columns].copy()
         data.sort_values("EntryTime", ascending=False, inplace=True)
 
-         # Columas Auxiliares para pintar filas actaules de grilla
+        # Columas Auxiliares para pintar filas actaules de grilla
         data["EntryDateTime"]=pd.to_datetime(data["EntryTime"])
         data["EntryDate"]=data["EntryDateTime"].dt.date 
         #Fecha de hoy
@@ -122,8 +124,8 @@ def app_cncf():
         # Eliminar la columna auxiliar
         data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
 
-
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
+
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
 
@@ -138,7 +140,7 @@ def app_cncf():
         row_style_jscode = JsCode("""
         function(params) {
             if (params.data.EsHoy) {
-                return { backgroundColor: 'rgba(255,200,150,0.3)', color: 'black' };
+                return { backgroundColor: 'rgba(199, 249, 204,0.7)', color: 'black' };
             }
             return {};
         }
@@ -191,15 +193,11 @@ def app_cncf():
                 column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
-                #st.dataframe(dfpl)
-                graficar(dfpl,"Caida Normal Caida Fuerte")
+                graficar(dfpl,"Piso Fuerte")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
             st.warning("⚠️ No hay ninguna fila seleccionada.")
-
-        
-
     except Exception as e:
         st.error(f"❌ Error al cargar datos: {e}")
 
@@ -223,7 +221,8 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
-
+    sub_titulo=tickers.get(titulo)
+    #print(tickers.get(titulo))
     st.markdown(f"""
         <style>
         .kpi-container {{
@@ -303,7 +302,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         }}
         </style>
 
-        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo}</h3>
+        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo} - {sub_titulo}</h3>
         <div style="text-align: left; font-size: 14px; color: #c7f9cc; font-weight: 600;">
             🕒 Periodo analizado: <strong>{start}</strong> → <strong>{end}</strong>
         </div>
@@ -363,4 +362,4 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
 
 # Para probar la función de inmediato
 if __name__ == "__main__":
-    app_cncf()
+    app_piso_fuerte()

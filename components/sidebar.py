@@ -6,9 +6,13 @@ def generarSidebar():
                     .stSidebar{
                         width:400px;
                     }
-                    
                     .stSidebar  [data-testid="stSidebarHeader"]{
-
+                        background-image: url("https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/refs/heads/main/tradingscanx.png"); /* Ajusta URL */
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        background-size: contain;
+                        height: 75px; /* Puedes ajustar esta altura según la imagen */
+                        margin: 10px 0px
                     }
                     .stSidebar > [data-testid="stSidebarContent"]{
                         width: 100%;
@@ -57,11 +61,11 @@ def generarSidebar():
     
     with st.sidebar.expander("📜 Estrategias"):
         #st.page_link("pages/pm40.py", label="PM40", icon="⚙️")
-        st.page_link("pages/pm40.py", label="⩚ Promedio Movil")
-        st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura Bajista")
+        st.page_link("pages/pm40.py", label="⩚ Promedio Movil de 40")
+        st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura de Canal ")
         st.page_link("pages/cncf.py", label="⩏ Caida Normal-Fuerte")
         st.page_link("pages/gap_alza.py", label="⩚ Gap a la Alza")
-
+        st.page_link("pages/piso_fuerte.py", label="⩚ Piso Fuerte")
 
     st.sidebar.markdown("<hr class='sidebar-separador'>", unsafe_allow_html=True)
 

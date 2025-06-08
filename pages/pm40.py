@@ -7,6 +7,7 @@ from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
+from utils.lst_ticker import tickers
 
 proteger_pagina()
 
@@ -63,7 +64,7 @@ def app_pm40():
                 -webkit-text-fill-color: transparent;
                 display: inline-block;
             '>
-                Estrategia Promedio Movil
+                Estrategia Promedio Movil de 40
             </h1>
             <hr style='
                 border: none;
@@ -220,7 +221,8 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
-
+    sub_titulo=tickers.get(titulo)
+    #print(tickers.get(titulo))
     st.markdown(f"""
         <style>
         .kpi-container {{
@@ -300,7 +302,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         }}
         </style>
 
-        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo}</h3>
+        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo} - {sub_titulo}</h3>
         <div style="text-align: left; font-size: 14px; color: #c7f9cc; font-weight: 600;">
             🕒 Periodo analizado: <strong>{start}</strong> → <strong>{end}</strong>
         </div>
@@ -353,7 +355,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             <div class="kpi-card">
                 <div class="tooltip">Retorno porcentual promedio por trade</div>
                 <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio,2)*100}%</div>
+                <div class="kpi-value">{round(media_precio*100,2)}%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)

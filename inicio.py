@@ -4,9 +4,10 @@ from utils.custom_style import load_css
 # Configuración de la página
 st.set_page_config(page_title="TraderXPRO", layout="wide")
 load_css("styles/style.css")
+st.markdown("<div class='header'><div class='header-img'></div><div>titulo 2</div></div>",unsafe_allow_html=True)
 
 def mostrar_inicio():
-    st.markdown("<div class='title_header'>Trading<span>XPRO</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='title_header'>Trading<span>SCANX</span></div>", unsafe_allow_html=True)
     st.markdown("<div class='p_descripcion'>Escaneo de estrategias utilizando Inteligencia Artificial.</div>", unsafe_allow_html=True)
 
     col_left, col_center, col_right = st.columns([1, 2, 1])

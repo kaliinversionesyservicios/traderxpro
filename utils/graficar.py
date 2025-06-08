@@ -7,7 +7,6 @@ from bokeh.models import LabelSet, ColumnDataSource
 
 def graficar(dfpl,title):
     dfpl.reset_index(drop=True, inplace=True)
-    
     #NOMBRE TIPO VELA
     if title=="Caida Normal Caida Fuerte":
         df_velas = dfpl[dfpl["tipo_vela"].notnull()].copy()
@@ -81,18 +80,21 @@ def graficar(dfpl,title):
     if title=="Caida Normal Caida Fuerte":
         p.add_layout(labels)
 
-    slopeH=dfpl["sl_highs"].iloc[0]
+    if title=="Gap a la Alza" or title=="Piso Fuerte":
+        slopeH=0
+        r_sq_h=0
+        val=0
+    else: 
+        slopeH=dfpl["sl_highs"].iloc[0]
+        r_sq_h=dfpl["r_sq_h"].iloc[0]
+        val = str(slopeH) + "," + str(r_sq_h)
 
-    r_sq_h=dfpl["r_sq_h"].iloc[0]
-
-    val = str(slopeH) + "," + str(r_sq_h)
-    
-    p.scatter(x="index", y="pivotLow", marker="circle", size=5,
-            line_color="navy", fill_color="red", alpha=0.5, legend_label="Cambio Tendencia Alcista", source=dfpl)
-    p.scatter(x="index", y="pivotHigh", marker="circle", size=5,
-            line_color="navy", fill_color="green", alpha=0.5, legend_label="Cambio Tendencia Bajista", source=dfpl)
-    p.scatter(x="index", y="High", marker="square_pin", size=8,
-            line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendH==1)])
+        p.scatter(x="index", y="pivotLow", marker="circle", size=5,
+                line_color="navy", fill_color="red", alpha=0.5, legend_label="Cambio Tendencia Alcista", source=dfpl)
+        p.scatter(x="index", y="pivotHigh", marker="circle", size=5,
+                line_color="navy", fill_color="green", alpha=0.5, legend_label="Cambio Tendencia Bajista", source=dfpl)
+        p.scatter(x="index", y="High", marker="square_pin", size=8,
+                line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendH==1)])
     
     inicio = (dfpl[(dfpl.ind_posicion==0)].index).tolist()[0]
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed', name="hola esto es una prueba", level='annotation', tags= ['square'])
@@ -119,11 +121,12 @@ def graficar(dfpl,title):
         alpha=0.8
     )
     
-    if title=="Gap a la Alza":
+    if title=="Gap a la Alza" :
         salidas=dfpl[dfpl["indicador"]==2]
     else:
         salidas=dfpl[dfpl["isBreakOutFinal"]==1]
         
+
     p.inverted_triangle(
         x=salidas.index,
         y=salidas["High"] + 0.07,  # un poco encima del máximo
@@ -133,14 +136,15 @@ def graficar(dfpl,title):
         alpha=0.8
     )
     
-    
     p.yaxis[0].formatter = NumeralTickFormatter(format="$0.00")
     p.xaxis.axis_label = "Fecha"
     p.yaxis.axis_label = "Precio"
     p.legend.location="top_left"
     p.legend.click_policy="hide"
     p.renderers.extend([vline])
-    volume = figure(x_axis_type="datetime", height=120, width=1000, tooltips = [("Volume", "@Volume"),("datetime", "@Datetime_str")],background_fill_color="#efefef")
+    volume = figure(x_axis_type="datetime", height=120, width=1000, tooltips = [("Volume", "@Volume"),("datetime", "@Datetime_str")],
+    background_fill_color="#efefef",x_range=p.x_range)
+
     volume.x_range.range_padding = 0.05
     volume.vbar(    
         x="index",
