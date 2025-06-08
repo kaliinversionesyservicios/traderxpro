@@ -80,7 +80,7 @@ def aplicar_estilos():
 # Inicializar Firebase
 if not firebase_admin._apps:
     #cred_path=os.getenv("FIREBASE_KEY_PATH")
-    cred_path = "D:/traderxpro/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
+    cred_path = "D:/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
     print("Ruta cargada desde .env:", cred_path)
     cred=credentials.Certificate(cred_path)
     firebase_admin.initialize_app(cred)
