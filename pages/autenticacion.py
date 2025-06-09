@@ -1,6 +1,6 @@
 import streamlit as st
 import firebase_admin
-from firebase_admin import credentials,firestore
+from firebase_admin import credentials,firestore,initialize_app
 from dotenv import load_dotenv
 import os
 import time
@@ -79,10 +79,12 @@ def aplicar_estilos():
 
 # Inicializar Firebase
 if not firebase_admin._apps:
-    cred_path=os.getenv("FIREBASE_KEY_PATH")
+    import json
+    service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
+    #cred_path=os.getenv("FIREBASE_KEY_PATH")
     #cred_path = "D:/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
-    print("Ruta cargada desde .env:", cred_path)
-    cred=credentials.Certificate(cred_path)
+    print("Ruta cargada desde .env:", service_account_info)
+    cred=credentials.Certificate(service_account_info)
     firebase_admin.initialize_app(cred)
 
 db=firestore.client()
