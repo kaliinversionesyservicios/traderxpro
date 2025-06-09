@@ -102,17 +102,18 @@ def graficar(dfpl,title):
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed', name="hola esto es una prueba", level='annotation', tags= ['square'])
 
 
-    p.line(
-    x="index",
-    y="trendcurrhigh",
-    color="purple",
-    legend_label="Slope High",
-    source=dfpl)
+    
     
     if title=="Gap a la Alza":
         entradas=dfpl[dfpl["indicador"]==1]
     else:
         entradas=dfpl[dfpl["isBreakOutIni"]==1]
+        p.line(
+        x="index",
+        y="trendcurrhigh",
+        color="purple",
+        legend_label="Slope High",
+        source=dfpl)
 
     p.triangle(
         x=entradas.index,
