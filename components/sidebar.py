@@ -25,6 +25,7 @@ def generarSidebar():
                         url('https://raw.githubusercontent.com/LinderCa/assets/refs/heads/main/fondo.png') no-repeat center center fixed !important;
                         background-size: cover !important;
                     }
+
                     .stButton > button{
                         width: 100%;
                         margin:0px;
@@ -39,15 +40,6 @@ def generarSidebar():
                         color: #57cc99;
                     }
                     
-                    .st-emotion-cache-1oou9d  > p{
-                        color: #fff;
-                        padding-bottom: 5px;  
-                        font-size:12px;  
-                    }
-                    .st-emotion-cache-1w3omjh {
-                        font-size: 18px !important;  /* Aumenta el tamaño del texto */
-                        font-weight: bold !important; /* Hace que el texto sea más grueso */
-                    }
                     .sidebar-separador{
                         border: 0;
                         height: 1px;
@@ -63,9 +55,9 @@ def generarSidebar():
         #st.page_link("pages/pm40.py", label="PM40", icon="⚙️")
         st.page_link("pages/pm40.py", label="⩚ Promedio Movil de 40")
         st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura de Canal ")
-        st.page_link("pages/cncf.py", label="⩏ Caida Normal-Fuerte")
-        st.page_link("pages/gap_alza.py", label="⩚ Gap a la Alza")
-        st.page_link("pages/piso_fuerte.py", label="⩚ Piso Fuerte")
+        st.page_link("pages/cncf.py", label="↙ Caida Normal-Fuerte")
+        st.page_link("pages/gap_alza.py", label="⇧ Gap a la Alza")
+        st.page_link("pages/piso_fuerte.py", label="✪ Piso Fuerte")
 
     st.sidebar.markdown("<hr class='sidebar-separador'>", unsafe_allow_html=True)
 

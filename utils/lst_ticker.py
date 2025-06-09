@@ -1,5 +1,5 @@
 tickers={
-        'Todos':'',
+        'Todos':' ',
         'AAPL':'Apple Inc.',
         'META':'Meta Platforms, Inc.',
         'AMZN':'Amazon.com, Inc.',

@@ -7,75 +7,23 @@ from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
+from utils.spinner import mostrar_spinner
+from utils.style_notebook import mostrar_style_notebook
+
 
 proteger_pagina()
 
 def app_gap_alza():
     generarSidebar()
-    loading_placeholder = st.empty()
-    spinner_css = """
-    <style>
-    .loading-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(87, 204, 153, 0);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-    .loader {
-        border: 8px solid #c7f9cc;
-        border-top: 8px solid #57cc99;
-        border-radius: 50%;
-        width: 80px;
-        height: 80px;
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    </style>
-    <div class="loading-screen">
-      <div class="loader"></div>
-    </div>
-    """
-    loading_placeholder.markdown(spinner_css, unsafe_allow_html=True)
-    time.sleep(2)
-    loading_placeholder.empty()
+    mostrar_spinner(segundos=3)
 
     # URLs
     url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pga.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pga.txt"
 
-    st.markdown("""
-        <div style='text-align: left;'>
-            <h1 style='
-                font-size: 38px;
-                font-weight: bold;
-                background: linear-gradient(to right,#57cc99, #c7f9cc);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                display: inline-block;
-            '>
-                Gap a la Alza
-            </h1>
-            <hr style='
-                border: none;
-                height: 2px;
-                width: 460px;
-                background-color: #212529;
-                margin-top: 0;
-                margin-bottom: 10px;
-            '/>
-        </div>
-    """, unsafe_allow_html=True)
-    
+    mostrar_style_notebook("Gap a la Alza")
+
     try:
         df_casos=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   

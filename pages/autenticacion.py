@@ -4,6 +4,7 @@ from firebase_admin import credentials,firestore,initialize_app
 from dotenv import load_dotenv
 import os
 import time
+from utils.spinner import mostrar_spinner
 
 #Cargar las variables de entorno
 load_dotenv()
@@ -125,6 +126,7 @@ def login():
         usuario = st.text_input("Usuario")
         contraseña = st.text_input("Contraseña", type="password")
         login_button = st.form_submit_button("Ingresar")
+        mostrar_spinner(segundos=3)
 
     # Lógica de validación
     if login_button:
