@@ -79,13 +79,21 @@ def aplicar_estilos():
 
 # Inicializar Firebase
 if not firebase_admin._apps:
-    import json
-    service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
-    #cred_path=os.getenv("FIREBASE_KEY_PATH")
-    #cred_path = "D:/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
-    print("Ruta cargada desde .env:", service_account_info)
-    cred=credentials.Certificate(service_account_info)
-    firebase_admin.initialize_app(cred)
+    try:
+        import json
+        service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
+        #cred_path=os.getenv("FIREBASE_KEY_PATH")
+        #cred_path = "D:/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
+        print("Ruta cargada desde .env:", service_account_info)
+        
+    except: 
+        print("⚠️ No se encontraron claves en st.secrets, usando variable de entorno.")
+        load_dotenv()
+        cred_path=os.getenv("FIREBASE_KEY_PATH")
+        with open(cred_path) as f:
+            service_account_info=json.load(f)
+cred=credentials.Certificate(service_account_info)
+firebase_admin.initialize_app(cred)
 
 db=firestore.client()
 
