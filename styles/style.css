@@ -19,13 +19,12 @@
         radial-gradient(circle at 50% 80%, rgba(29, 29, 29, 0.6) 5%, rgba(29, 29, 29, 0.4) 30%, transparent 90%),
         radial-gradient(circle at 40% 60%, rgba(34, 93, 58, 0.3) 5%, rgba(34, 93, 58, 0.15) 30%, transparent 85%),
         linear-gradient(45deg, rgba(29, 29, 29, 0.9) 0%, rgba(29, 29, 29, 0.7) 40%, rgba(34, 93, 58, 0.4) 100%),
-        url('https://raw.githubusercontent.com/LinderCa/assets/refs/heads/main/fondo.png') no-repeat center center fixed !important;
+        url('https://tse4.mm.bing.net/th/id/OIP.tr__6dSxvXFcPEBOBJbyewHaE8?rs=1&pid=ImgDetMain') no-repeat center center fixed !important;
     background-size: cover !important;
 }
 
 /*ESTILOS */
 .title_header{
-    font-size: 200px;
     text-align: center;
     font-weight: bold;
     margin-bottom: 15px;
@@ -35,14 +34,22 @@
     font-family: var(--primary-font);
 }
 
-.title_header > span{
+.title_header h2{
+    font-size: 240px;
+    padding: 0;
+}
+
+.title_header  h3{
     color: var(--primary-color);
+    font-size: 200px;
+
 }
 
 .p_descripcion{
     font-size: 30px;
     text-align: center;
     margin-bottom:20px;
+    font-family: var(--secondary-font);
 }
 
 .stButton > button{

@@ -6,7 +6,7 @@ import os
 import time
 
 #Cargar las variables de entorno
-load_dotenv()
+#load_dotenv()
 
 # Función para inyectar CSS personalizado
 def aplicar_estilos():
