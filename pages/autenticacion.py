@@ -84,7 +84,7 @@ if not firebase_admin._apps:
         service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
         #cred_path=os.getenv("FIREBASE_KEY_PATH")
         #cred_path = "D:/secrets/traderxpro-466db-firebase-adminsdk-fbsvc-35c9d96ef7.json"
-        print("Ruta cargada desde .env:", service_account_info)
+        #print("Ruta cargada desde .env:", service_account_info)
         
     except: 
         print("⚠️ No se encontraron claves en st.secrets, usando variable de entorno.")

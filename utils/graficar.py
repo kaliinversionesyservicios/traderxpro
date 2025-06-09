@@ -6,6 +6,7 @@ from bokeh.models import LabelSet, ColumnDataSource
 
 
 def graficar(dfpl,title):
+    #st.dataframe(dfpl)
     dfpl.reset_index(drop=True, inplace=True)
     #NOMBRE TIPO VELA
     if title=="Caida Normal Caida Fuerte":
@@ -88,13 +89,14 @@ def graficar(dfpl,title):
         slopeH=dfpl["sl_highs"].iloc[0]
         r_sq_h=dfpl["r_sq_h"].iloc[0]
         val = str(slopeH) + "," + str(r_sq_h)
-
-        p.scatter(x="index", y="pivotLow", marker="circle", size=5,
-                line_color="navy", fill_color="red", alpha=0.5, legend_label="Cambio Tendencia Alcista", source=dfpl)
-        p.scatter(x="index", y="pivotHigh", marker="circle", size=5,
-                line_color="navy", fill_color="green", alpha=0.5, legend_label="Cambio Tendencia Bajista", source=dfpl)
         p.scatter(x="index", y="High", marker="square_pin", size=8,
-                line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendH==1)])
+                    line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendH==1)])
+        
+    #codigo para dibujar pivots
+    p.scatter(x="index", y="pivotLow", marker="circle", size=5,
+                    line_color="navy", fill_color="red", alpha=0.5, legend_label="Cambio Tendencia Alcista", source=dfpl)
+    p.scatter(x="index", y="pivotHigh", marker="circle", size=5,
+                    line_color="navy", fill_color="green", alpha=0.5, legend_label="Cambio Tendencia Bajista", source=dfpl)
     
     inicio = (dfpl[(dfpl.ind_posicion==0)].index).tolist()[0]
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed', name="hola esto es una prueba", level='annotation', tags= ['square'])
