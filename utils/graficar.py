@@ -86,11 +86,19 @@ def graficar(dfpl,title):
         r_sq_h=0
         val=0
     else: 
-        slopeH=dfpl["sl_highs"].iloc[0]
-        r_sq_h=dfpl["r_sq_h"].iloc[0]
-        val = str(slopeH) + "," + str(r_sq_h)
-        p.scatter(x="index", y="High", marker="square_pin", size=8,
+        if title=="Ruptura de Canal Alcista":
+            slopeL=dfpl["sl_lows"].iloc[0]
+            r_sq_l=dfpl["r_sq_l"].iloc[0]
+            val = str(slopeL) + "," + str(r_sq_l)
+            p.scatter(x="index", y="Low", marker="square_pin", size=8,
+                    line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendL==1)])
+        else:
+            slopeH=dfpl["sl_highs"].iloc[0]
+            r_sq_h=dfpl["r_sq_h"].iloc[0]
+            val = str(slopeH) + "," + str(r_sq_h)
+            p.scatter(x="index", y="High", marker="square_pin", size=8,
                     line_color="navy", fill_color="black", alpha=0.5, legend_label=val , source=dfpl[(dfpl.trendH==1)])
+            
         
     #codigo para dibujar pivots
     p.scatter(x="index", y="pivotLow", marker="circle", size=5,
@@ -108,12 +116,20 @@ def graficar(dfpl,title):
         entradas=dfpl[dfpl["indicador"]==1]
     else:
         entradas=dfpl[dfpl["isBreakOutIni"]==1]
-        p.line(
-        x="index",
-        y="trendcurrhigh",
-        color="purple",
-        legend_label="Slope High",
-        source=dfpl)
+        if title=="Ruptura de Canal Alcista":
+            p.line(
+            x="index",
+            y="trendcurrlow",
+            color="purple",
+            legend_label="Slope Low",
+            source=dfpl)
+        else:
+            p.line(
+            x="index",
+            y="trendcurrhigh",
+            color="purple",
+            legend_label="Slope High",
+            source=dfpl)
 
     p.triangle(
         x=entradas.index,

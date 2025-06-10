@@ -7,28 +7,29 @@ from utils.graficar import graficar
 from utils.kpis_mean import mean_duration,mean_price
 from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
-from utils.lst_ticker import tickers
 from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
 
+
 proteger_pagina()
 
-def app_pm40():
+def app_ruptura_bajista():
     generarSidebar()
     mostrar_spinner(segundos=3)
-    # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pm40_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pm40.txt"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pm40.txt"
 
-    mostrar_style_notebook("Promedio Movil de 40")
+    # URLs
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/rca_h.txt"
+    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_rca_h.txt.csv"
+    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_rca_h.txt.csv"
+
+    mostrar_style_notebook("Ruptura de Canal Alcista")
 
     try:
         df_casos=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
         df_trades=pd.read_csv(trades,sep='\t')
 
-        #st.dataframe(df_trades)
+        #st.dataframe(df_casos)
         #st.dataframe(df_estadisticas)
         #Modificamos el tipo en datetime
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
@@ -139,7 +140,7 @@ def app_pm40():
                 column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
-                graficar(dfpl,"Promedio Movil")
+                graficar(dfpl,"Ruptura de Canal Alcista")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
@@ -167,8 +168,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
-    sub_titulo=tickers.get(titulo)
-    #print(tickers.get(titulo))
+
     st.markdown(f"""
         <style>
         .kpi-container {{
@@ -248,7 +248,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         }}
         </style>
 
-        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo} - {sub_titulo}</h3>
+        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo}</h3>
         <div style="text-align: left; font-size: 14px; color: #c7f9cc; font-weight: 600;">
             🕒 Periodo analizado: <strong>{start}</strong> → <strong>{end}</strong>
         </div>
@@ -308,4 +308,4 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
 
 # Para probar la función de inmediato
 if __name__ == "__main__":
-    app_pm40()
+    app_ruptura_bajista()

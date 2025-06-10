@@ -14,5 +14,24 @@ tickers={
         'TNA':'Direxion Daily Small Cap Bull 3X Shares',
         'TSLA':'Tesla, Inc.',
         'USO':'United States Oil Fund, LP',
-        'XOM':'Exxon Mobil Corporation'
+        'XOM':'Exxon Mobil Corporation',
+        'MSFT':'Microsoft',
+        'NVDA':'NVIDIA Corp',
+        'WMT':'Walmart Inc',
+        'BA':'The Boeing Company',
+        'DIS':'Walt Disney Co',
+        'CAT':'Caterpillar Inc',
+        'IBM':'International Business Machines Corp',
+        'WFC':'Wells Fargo & Co',
+        'PLTR':'Palantir Technologies Inc',
+        'AMD':'Advanced Micro Devices Inc',
+        'AVGO':'Broadcom Inc',
+        'HOOD':'Robinhood Markets, Inc',
+        'CRWV':'CoreWeave, Inc',
+        'MSTR':'Microstrategy Inc',
+        'UNH':'UnitedHealth Group Inc',
+        'GOOG':'Alphabet Inc',
+        'APP':'AppLovin Corporation',
+        'UBER':'Uber Technologies Inc'
+        #'TZA':'Direxion:Sm Cap Bear 3X'
         }
