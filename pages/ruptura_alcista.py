@@ -9,6 +9,7 @@ from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
 from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
+from utils.lst_ticker import tickers
 
 
 proteger_pagina()
@@ -19,8 +20,8 @@ def app_ruptura_bajista():
 
     # URLs
     url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/rca_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_rca_h.txt.csv"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_rca_h.txt.csv"
+    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_rca_h.csv"
+    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_rca_h.csv"
 
     mostrar_style_notebook("Ruptura de Canal Alcista")
 
@@ -168,6 +169,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
+    sub_titulo=tickers.get(titulo)
 
     st.markdown(f"""
         <style>
@@ -248,7 +250,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         }}
         </style>
 
-        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo}</h3>
+        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo} - {sub_titulo}</h3>
         <div style="text-align: left; font-size: 14px; color: #c7f9cc; font-weight: 600;">
             🕒 Periodo analizado: <strong>{start}</strong> → <strong>{end}</strong>
         </div>

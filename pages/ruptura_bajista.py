@@ -9,6 +9,7 @@ from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
 from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
+from utils.lst_ticker import tickers
 
 
 proteger_pagina()
@@ -168,6 +169,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
+    sub_titulo=tickers.get(titulo)
 
     st.markdown(f"""
         <style>
@@ -248,7 +250,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
         }}
         </style>
 
-        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo}</h3>
+        <h3 style="color: #57cc99; text-align: left;"> 🗒️ {titulo} - {sub_titulo}</h3>
         <div style="text-align: left; font-size: 14px; color: #c7f9cc; font-weight: 600;">
             🕒 Periodo analizado: <strong>{start}</strong> → <strong>{end}</strong>
         </div>
