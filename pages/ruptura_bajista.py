@@ -70,7 +70,8 @@ def app_ruptura_bajista():
         data["ExitTime"] = data["ExitTime"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
 
         # Eliminar la columna auxiliar
-        data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
+        data.drop(columns=["EntryDateTime",'EntryDate','EsHoy'], inplace=True)
+        data["Call"] = "↑"
 
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
 

@@ -16,6 +16,7 @@ proteger_pagina()
 def app_cncf():
     generarSidebar()
     mostrar_spinner(segundos=3)
+
     # URLs
     url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cncf_h.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cncf.txt"
@@ -67,9 +68,9 @@ def app_cncf():
         data["ExitTime"] = data["ExitTime"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
 
         # Eliminar la columna auxiliar
-        data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
-
-
+        data.drop(columns=["EntryDateTime",'EntryDate','EsHoy'], inplace=True)
+        data["Call"] = "↑"
+        
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
@@ -80,7 +81,7 @@ def app_cncf():
         
         # Mostrar grilla interactiva
         gb = GridOptionsBuilder.from_dataframe(data)
-        
+
         # Usar JsCode para pintar filas donde EsHoy es True
         row_style_jscode = JsCode("""
         function(params) {
