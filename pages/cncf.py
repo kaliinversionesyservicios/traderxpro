@@ -18,7 +18,7 @@ def app_cncf():
     mostrar_spinner(segundos=3)
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cncf_h.txt"
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cncf.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cncf.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_cncf.txt"
     #trade_urls = { }
