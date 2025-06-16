@@ -19,7 +19,7 @@ def app_gap_alza():
     mostrar_spinner(segundos=3)
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga.txt"
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pga_h.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pga.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pga.txt"
 

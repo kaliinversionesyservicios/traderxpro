@@ -20,8 +20,8 @@ def app_ruptura_bajista():
 
     # URLs
     url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cb_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas.csv"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades.csv"
+    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cb.txt"
+    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_cb.txt"
 
     mostrar_style_notebook("Ruptura de Canal Bajista")
 

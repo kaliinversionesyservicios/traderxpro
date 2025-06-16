@@ -19,7 +19,7 @@ def app_piso_fuerte():
     mostrar_spinner(segundos=3)
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pfuerte.txt"
+    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/pfuerte_h.txt"
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_pfuerte.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_pfuerte.txt"
 
