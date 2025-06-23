@@ -26,6 +26,9 @@ def app_cncf():
     mostrar_style_notebook("Estrategia Caida Bajista - Caida Alcista")
 
     try:
+        backeval = 75 
+        posteval=0
+        i_fin=np.nan
         df=pd.read_csv(url_casos,sep='\t')
         df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
         df_trades=pd.read_csv(trades,sep='\t')
@@ -157,20 +160,49 @@ def app_cncf():
                 ticker=selected.iloc[0]['Ticker']
                 caso=selected.iloc[0]['caso']
                 EntryTime=selected.iloc[0]['EntryTime']
+                ExitTime=selected.iloc[0]['ExitTime']
+                Tag=selected.iloc[0]['Tag']
 
-                st.success(f"Fila Seleccionada {ticker} | Fecha Entrada: {EntryTime} | caso: {caso}")
+                st.success(f"Fila Seleccionada {ticker} | Fecha Entrada: {EntryTime} | caso: {caso} | Tag: {Tag}")
                 #dfpl = df.query("companyName == @ticker and caso == @caso")
-                dfpl = df.query("companyName == @ticker")
+                df_ini = df.query("companyName == @ticker and datetime==@EntryTime").copy()
+                df_fin = df.query("companyName == @ticker and datetime==@ExitTime").copy()
+                i=df_ini.index.values[0]
+                if df_fin.shape[0]>0:
+                    i_fin=df_fin.index.values[0]
+                #Obteniendo el dataframe del inicio de la evaluacion
+                #HALLAR POSEVAL
+                idvelainitend=0
+                
+                if Tag=="short":
+                    velafintend = df[(df["cruce_medias"]==-1) & (df.index<i)].tail(1)
+                elif Tag=="long":
+                    velafintend=df[(df["cruce_medias"]==1) & (df.index<i)].tail(1)
 
-                #df_sub = df_estadisticas[df_estadisticas["Ticker"] == ticker]
-                #df_prueba=dfpl.query("ind_posicion==0 or isBreakOutIni==1 or isBreakOutFinal==1").copy()
-                #columna_for_ticker=data.query("Ticker== @ticker")
-                #column_ticker_mean=columna_for_ticker[['Duration','EntryPrice','ExitPrice']]
-                #with kpi_holder:
-                #    mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
+                if (velafintend.shape[0]>0):
+                    idvelainitend = velafintend.index[0]
+
+                if ((idvelainitend-idvelainitend)<=75):
+                    posteval=i+75
+                elif ((idvelainitend-idvelainitend)>75):
+                    posteval=i+idvelainitend+10
+                dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:posteval]).copy()
+                dfpl['isBreakOutIni']=np.nan
+                dfpl['isBreakOutFinal']=np.nan
                 #st.dataframe(dfpl)
-                #print(caso)
-                graficar(dfpl,"Caida Bajista - Caida Alcista",ticker,caso)
+                #st.dataframe(df)
+                if Tag=="short"  and pd.notna(i):
+                    dfpl.loc[i,"isBreakOutIni"]=-1
+                elif Tag=="long"  and pd.notna(i):
+                    dfpl.loc[i,"isBreakOutIni"]=1
+
+                if Tag=="short" and pd.notna(i_fin):
+                    dfpl.loc[i_fin,"isBreakOutFinal"]=-1
+                elif Tag=="long" and pd.notna(i_fin):
+                    dfpl.loc[i_fin,"isBreakOutFinal"]=1
+                dfpl.loc[idvelainitend,"indicador"]=0
+
+                graficar(dfpl,"Caida Bajista - Caida Alcista",Tag)
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
@@ -341,3 +373,11 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
 # Para probar la función de inmediato
 if __name__ == "__main__":
     app_cncf()
+
+
+
+
+##
+# dfpl = (df[(df.companyName==ticker)].loc[i-backeval:posteval]).copy()
+
+#posteval
