@@ -4,8 +4,13 @@ from utils.custom_style import load_css
 # Configuración de la página
 st.set_page_config(page_title="TraderXPRO", layout="wide")
 load_css("styles/style.css")
-st.markdown("<div class='header'><div class='header-img'></div><div>-</div></div>",unsafe_allow_html=True)
+#from streamlit_cookies_manager import EncryptedCookieManager
 
+#Lectura de cookies
+#cookie_manager=EncryptedCookieManager(prefix="traderxpro")
+#print(cookie_manager)
+    
+st.markdown("<div class='header'><div class='header-img'></div><div>-</div></div>",unsafe_allow_html=True)
 def mostrar_inicio():
     st.markdown("<div class='title_header'><h2>Trading</h2><h3>SCANX</h3></div>", unsafe_allow_html=True)
     st.markdown("<div class='p_descripcion'>Escaneo de estrategias utilizando Inteligencia Artificial.</div>", unsafe_allow_html=True)
@@ -17,6 +22,8 @@ def mostrar_inicio():
         empty_left, main_col, empty_right = st.columns([1, 2, 1])
     
     with main_col:
+        st.session_state["autenticado"] = False
+        print("HITO 01: ",st.session_state.get("autenticado"))
         if st.button("🔑 Iniciar Sesión"):
             st.session_state.modo = "usuario"
             st.rerun()

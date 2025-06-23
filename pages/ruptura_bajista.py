@@ -84,7 +84,7 @@ def app_ruptura_bajista():
         
         # Mostrar grilla interactiva
         gb = GridOptionsBuilder.from_dataframe(data)
-        
+
         # Usar JsCode para pintar filas donde EsHoy es True
         row_style_jscode = JsCode("""
         function(params) {
@@ -95,6 +95,20 @@ def app_ruptura_bajista():
         }
         """)
         gb.configure_grid_options(getRowStyle=row_style_jscode)
+
+        #Estilo 02
+        tipo_style_jscode=JsCode("""
+        function(params) {
+            if (params.value === "↑ Call") {
+                return { backgroundColor: '#99d98c', color: '#001427', fontWeight: 'bold', textAlign: 'center' };
+            } else if (params.value === "↓ Put") {
+                return { backgroundColor: 'rgba(255,  99,  71, 0.3)', color: 'red', fontWeight: 'bold', textAlign: 'center'};
+            }
+            return {};
+        }
+        """)
+        gb.configure_column("Tipo", cellStyle=tipo_style_jscode)
+
 
         gb.configure_selection("single", use_checkbox=True)
         

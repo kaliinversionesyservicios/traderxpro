@@ -6,7 +6,7 @@ from bokeh.models import LabelSet, ColumnDataSource
 
 
 def graficar(dfpl,title):
-    #st.dataframe(dfpl)
+    st.dataframe(dfpl)
     dfpl.reset_index(drop=True, inplace=True)
     #NOMBRE TIPO VELA
     if title=="Caida Normal Caida Fuerte":
@@ -108,12 +108,10 @@ def graficar(dfpl,title):
     
     inicio = (dfpl[(dfpl.ind_posicion==0)].index).tolist()[0]
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed', name="hola esto es una prueba", level='annotation', tags= ['square'])
-
-
     
     
     if title=="Gap a la Alza":
-        entradas=dfpl[dfpl["indicador"]==1]
+        entradas=dfpl[dfpl["indicador"]==1] 
     else:
         entradas=dfpl[dfpl["isBreakOutIni"]==1]
         if title=="Ruptura de Canal Alcista":

@@ -11,6 +11,7 @@ from utils.lst_ticker import tickers
 from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
 
+print("HITO 02: ",st.session_state.get("autenticado"))
 proteger_pagina()
 
 def app_pm40():
@@ -93,6 +94,20 @@ def app_pm40():
         }
         """)
         gb.configure_grid_options(getRowStyle=row_style_jscode)
+
+        #Estilo 02
+        tipo_style_jscode=JsCode("""
+        function(params) {
+            if (params.value === "↑ Call") {
+                return { backgroundColor: '#99d98c', color: '#001427', fontWeight: 'bold', textAlign: 'center' };
+            } else if (params.value === "↓ Put") {
+                return { backgroundColor: 'rgba(255,  99,  71, 0.3)', color: 'red', fontWeight: 'bold', textAlign: 'center'};
+            }
+            return {};
+        }
+        """)
+        gb.configure_column("Tipo", cellStyle=tipo_style_jscode)
+
 
         gb.configure_selection("single", use_checkbox=True)
         

@@ -1,7 +1,6 @@
-def proteger_pagina(modos_permitidos=["usuario", "visitante"]):
-    import streamlit as st
-    modo_actual = st.session_state.get("modo")
-
-    if modo_actual not in modos_permitidos:
+import streamlit as st
+def proteger_pagina():
+    print("HITO 03: ",st.session_state.get("autenticado"))
+    if not st.session_state.get("autenticado", False):
         st.warning("🔐 Acceso denegado. Por favor, inicia sesión.")
         st.stop()
