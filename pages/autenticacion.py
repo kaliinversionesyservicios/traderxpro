@@ -137,7 +137,7 @@ def login():
             st.toast("Redirigiendo a tu panel...", icon="🔄")
             time.sleep(1.5)
             #st.experimental_rerun()
-            st.switch_page("pages/pm40.py")
+            st.switch_page("pages/ruptura_bajista.py")
             return True
         else:
             st.error("❌ Usuario o contraseña incorrectos. Intenta de nuevo.", icon="🚫")
