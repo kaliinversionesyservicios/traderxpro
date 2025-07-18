@@ -76,19 +76,15 @@ def app_cncf():
 
         # Eliminar la columna auxiliar
         data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
-        #if data[data["Tag"]=="long"]:
-        #    data["Tipo"] = "↑ Call"
-        #else:
-        #    data["Tipo"]="↓ Put"
-        #data["short"]
-        #if data[data["Tag"]=='short']:
         data["Tipo"] = np.where(data["Tag"] == "short", "↓ Put", "↑ Call")
-        #st.write(data)
-        #data["Tipo"] = "↑ Call"
+
+        data['EntryPrice'] = pd.to_numeric(data['EntryPrice'], errors='coerce')
+        data['ExitPrice']  = pd.to_numeric(data['ExitPrice'],  errors='coerce')
+        data['Strike'] = data['ExitPrice'] - data['EntryPrice']
+
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
-
         df_inicial=df_estadisticas.groupby("Ticker").mean(numeric_only=True).reset_index()
         with kpi_holder:
             mostrar_kpis_por_ticker(df_inicial, promedio=True,fecha=dict_fecha,data=data_mean)
