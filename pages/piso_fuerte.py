@@ -73,6 +73,12 @@ def app_piso_fuerte():
         data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
         data["Tipo"] = "↑ Call"
 
+        diff = pd.to_datetime(data['ExitTime'], utc=True) - pd.to_datetime(data['EntryTime'], utc=True)
+
+        data['EntryPrice'] = pd.to_numeric(data['EntryPrice'], errors='coerce')
+        data['ExitPrice']  = pd.to_numeric(data['ExitPrice'],  errors='coerce')
+        data['Strike'] = data['ExitPrice'] - data['EntryPrice']
+
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
 
         #RESERVA DE ESPACIO

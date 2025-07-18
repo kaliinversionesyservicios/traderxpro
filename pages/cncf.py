@@ -71,6 +71,10 @@ def app_cncf():
         data.drop(columns=["EntryDateTime",'EntryDate'], inplace=True)
         data["Tipo"] = "↑ Call"
         
+        data['EntryPrice'] = pd.to_numeric(data['EntryPrice'], errors='coerce')
+        data['ExitPrice']  = pd.to_numeric(data['ExitPrice'],  errors='coerce')
+        data['Strike'] = data['ExitPrice'] - data['EntryPrice']
+
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
