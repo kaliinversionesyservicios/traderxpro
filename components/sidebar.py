@@ -54,12 +54,12 @@ def generarSidebar():
     with st.sidebar.expander("📜 Estrategias"):
         #st.page_link("pages/pm40.py", label="PM40", icon="⚙️")
         #st.page_link("pages/pm40.py", label="⩚ Promedio Movil de 40")
-        st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura de Canal ")
+        #st.page_link("pages/ruptura_bajista.py", label="Ϟ Ruptura de Canal ")
         #st.page_link("pages/cncf.py", label="↙ Caida Normal-Fuerte")
-        #st.page_link("pages/gap_alza.py", label="⇧ Gap a la Alza")
-        st.page_link("pages/piso_fuerte.py", label="✪ Piso Fuerte")
-        #st.page_link("pages/ruptura_alcista.py", label="✪ Ruptura Alcista")
-        st.page_link("pages/cba.py", label="✪ Tendencia Bajista Alcista")
+        st.page_link("pages/cba.py", label="⇧ Tendencia Bajista Alcista")
+        st.page_link("pages/piso_fuerte.py", label="↙ Piso Fuerte")
+        st.page_link("pages/prueba.py", label="Prueba")
+
 
     st.sidebar.markdown("<hr class='sidebar-separador'>", unsafe_allow_html=True)
 

@@ -132,12 +132,11 @@ def login():
     if login_button:
         if validar_usuario(usuario,contraseña):
             st.session_state["autenticado"] = True
-            print("HITO 02: ",st.session_state.get("autenticado"))
             st.success("✅ ¡Bienvenido! Acceso autorizado.")
             st.toast("Redirigiendo a tu panel...", icon="🔄")
             time.sleep(1.5)
             #st.experimental_rerun()
-            st.switch_page("pages/ruptura_bajista.py")
+            st.switch_page("pages/cba.py")
             return True
         else:
             st.error("❌ Usuario o contraseña incorrectos. Intenta de nuevo.", icon="🚫")

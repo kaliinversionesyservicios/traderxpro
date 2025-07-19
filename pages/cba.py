@@ -14,7 +14,7 @@ from utils.functions_cba import obtEntrada,revisarVelas,obtSlope
 
 proteger_pagina()
 
-def app_cncf():
+def app_cba():
     generarSidebar()
     mostrar_spinner(segundos=3)
 
@@ -368,7 +368,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
 
 # Para probar la función de inmediato
 if __name__ == "__main__":
-    app_cncf()
+    app_cba()
 
 
 

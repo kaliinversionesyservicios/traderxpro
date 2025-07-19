@@ -9,7 +9,7 @@ load_css("styles/style.css")
 #Lectura de cookies
 #cookie_manager=EncryptedCookieManager(prefix="traderxpro")
 #print(cookie_manager)
-    
+
 st.markdown("<div class='header'><div class='header-img'></div><div>-</div></div>",unsafe_allow_html=True)
 def mostrar_inicio():
     st.markdown("<div class='title_header'><h2>Trading</h2><h3>SCANX</h3></div>", unsafe_allow_html=True)
@@ -23,7 +23,6 @@ def mostrar_inicio():
     
     with main_col:
         st.session_state["autenticado"] = False
-        print("HITO 01: ",st.session_state.get("autenticado"))
         if st.button("🔑 Iniciar Sesión"):
             st.session_state.modo = "usuario"
             st.rerun()
@@ -42,9 +41,8 @@ def main():
     if "modo" not in st.session_state:
         mostrar_inicio()
     elif st.session_state.modo == "visitante":
-        from pages.ruptura_bajista import app_ruptura_bajista
-        print(st.session_state.modo)
-        app_ruptura_bajista()
+        from pages.cba import app_cba
+        app_cba()
         st.stop()
     elif st.session_state.modo == "usuario":
         from pages.autenticacion import login
