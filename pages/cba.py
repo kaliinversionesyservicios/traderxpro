@@ -20,8 +20,8 @@ def app_cba():
 
     # URLs
     url_casos = "/home/ubuntu/script/data/cba_h.txt"
-    estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba_2.txt"
+    trades="/home/ubuntu/script/data/backtesting/trades_cba_2.txt"
     #trade_urls = { }
     mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
 
