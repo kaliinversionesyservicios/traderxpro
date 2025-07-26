@@ -19,12 +19,12 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs
-    url_casos = "https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/cba_h.txt"
-    estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cba.txt"
-    trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_cba.txt"
+    url_casos = "/home/ubuntu/script/data/cba_h.txt"
+    estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
     #trade_urls = { }
     mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
-    
+
     try:
         backeval = 75 
         posteval=0
