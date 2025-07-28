@@ -23,7 +23,7 @@ def app_cba():
     estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba_2.txt"
     trades="/home/ubuntu/script/data/backtesting/trades_cba_2.txt"
     #trade_urls = { }
-    mostrar_style_notebook("Estrategia Tendencia Bajistas - Tendencia Alcista")
+    mostrar_style_notebook("Estrategia Tendencia Bajistass - Tendencia Alcista")
 
     try:
         backeval = 75 
