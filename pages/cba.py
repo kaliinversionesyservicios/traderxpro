@@ -23,7 +23,7 @@ def app_cba():
     estadisticas="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/estadisticas_cba.txt"
     trades="https://raw.githubusercontent.com/kaliinversionesyservicios/TraderEstrategias/main/data/backtesting/trades_cba.txt"
     #trade_urls = { }
-    mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
+    mostrar_style_notebook("Estrategia Tendencia Bajistas - Tendencia Alcista")
 
     try:
         backeval = 75 
