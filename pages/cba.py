@@ -11,18 +11,37 @@ from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
 from utils.lst_ticker import tickers
 from utils.functions_cba import obtEntrada,revisarVelas,obtSlope
+import psutil
+import os
+
 
 #proteger_pagina()
+
+def get_memory_usage():
+    process = psutil.Process(os.getpid())
+    mem_bytes = process.memory_info().rss  # Resident Set Size
+    mem_mb = mem_bytes / (1024 * 1024)  # Convertir a MB
+    return mem_mb
+
+st.title("Monitor de memoria")
+memoria = get_memory_usage()
+st.write(f"Uso actual de memoria del proceso: {memoria:.2f} MB")
 
 def app_cba():
     generarSidebar()
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+
+    #LINDER
+    url_casos = "D:/data/tab_h.txt"
+    url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/data/backtesting/trades_cba.txt"
+    url_strategy = 'D:/data/strategy.txt'
 
     # URLs DESARROLLO
     # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
@@ -124,6 +143,7 @@ def app_cba():
         }
         """)
         gb.configure_column("Tipo", cellStyle=tipo_style_jscode)
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
 
 
         gb.configure_selection("single", use_checkbox=True)
@@ -161,7 +181,7 @@ def app_cba():
             if len(selected) > 0:
                 titulo = "Gráfico"
                 st.markdown(f'<h3 style="color: #57cc99; text-align: left;">{titulo}</h3>', unsafe_allow_html=True)
-                df=tipo_vela()
+                
                 print("val inicial:",df.shape[0], "index:", df.index[0] , "-", df.index[-1] )           
                 ticker=selected.iloc[0]['Ticker']               
                 caso=selected.iloc[0]['caso']              
@@ -183,16 +203,13 @@ def app_cba():
                 #else:
                 #    i_fin=df_fin2.index.values[0]
                 #Obteniendo el dataframe del inicio de la evaluacion
-                #HALLAR POSEVAL
+                #df=tipo_vela()
+                
+                
+
                 idvelainitend=0
-                if tag=="short":
-                    velafintend = df[(df["cruce_medias"]==-1) & (df.index<i)].tail(1)
-                elif tag=="long":
-                    velafintend=df[(df["cruce_medias"]==1) & (df.index<i)].tail(1)
-
-                if (velafintend.shape[0]>0):
-                    idvelainitend = velafintend.index[0]
-
+                
+                
                 if pd.notna(i_fin):
                     if ((i_fin-i)<=75):
                         posteval=i+75
@@ -202,7 +219,25 @@ def app_cba():
                 else:
                     dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:]).copy()
 
+                #HALLAR POSEVAL
+                if tag=="short":
+                    velafintend = dfpl[(dfpl["cruce_medias"]==-1) & (dfpl.index<i)].tail(1)
+                elif tag=="long":
+                    velafintend=dfpl[(dfpl["cruce_medias"]==1) & (dfpl.index<i)].tail(1)
+
+                if (velafintend.shape[0]>0):
+                    idvelainitend = velafintend.index[0]
+
                 print(dfpl.shape[0])
+                
+                dfpl['Datetime'] = pd.to_datetime(dfpl.Datetime) 
+                dfpl["Datetime_str"] = dfpl["Datetime"].astype(str)
+                dfpl["BarColor"] = dfpl[["Open","Close"]].apply(lambda o: "red" if o.Open>o.Close else "green", axis=1)
+                
+
+                
+
+                
 
                 if tag=="short":
                     dfpl['isBreakOutIni2']=np.nan
