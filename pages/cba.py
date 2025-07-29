@@ -32,10 +32,10 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    url_strategy = '/home/ubuntu/script/data/strategy.txt'
 
     #LINDER
     # url_casos = "D:/data/tab_h.txt"
@@ -44,10 +44,10 @@ def app_cba():
     # url_strategy = 'D:/data/strategy.txt'
 
     # URLs DESARROLLO
-    url_casos = "D:/TraderEstrategias/data/tab_h.txt"
-    url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
-    url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
-    url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+    # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
+    # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
 
     #trade_urls = { }
     mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
