@@ -12,26 +12,35 @@ from utils.style_notebook import mostrar_style_notebook
 from utils.lst_ticker import tickers
 from utils.functions_cba import obtEntrada,revisarVelas,obtSlope
 
-proteger_pagina()
+#proteger_pagina()
 
 def app_cba():
     generarSidebar()
     mostrar_spinner(segundos=3)
 
-    # URLs
-    url_casos = "/home/ubuntu/script/data/cba_h.txt"
-    estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba_2.txt"
-    trades="/home/ubuntu/script/data/backtesting/trades_cba_2.txt"
+    # URLs PRODUCCION
+    url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    url_strategy = '/home/ubuntu/script/data/strategy.txt'
+
+    # URLs DESARROLLO
+    # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
+    # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+
     #trade_urls = { }
-    mostrar_style_notebook("Estrategia Tendencia Bajistass - Tendencia Alcista")
+    mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
 
     try:
-        backeval = 75 
+        backeval = 100
         posteval=0
         i_fin=np.nan
         df=pd.read_csv(url_casos,sep='\t')
-        df_estadisticas = pd.read_csv(estadisticas,sep='\t')   
-        df_trades=pd.read_csv(trades,sep='\t')
+        df_estadisticas = pd.read_csv(url_estadisticas,sep='\t')   
+        df_trades=pd.read_csv(url_trades,sep='\t')
+        df_strategy = pd.read_csv(url_strategy,sep='\t')
 
         #st.dataframe(df)
         #Modificamos el tipo en datetime
@@ -136,8 +145,8 @@ def app_cba():
 
         #FUNCION PROBADA
         def tipo_vela():
-            df['datetime'] = pd.to_datetime(df.datetime) 
-            df["Datetime_str"] = df["datetime"].astype(str)
+            df['Datetime'] = pd.to_datetime(df.Datetime) 
+            df["Datetime_str"] = df["Datetime"].astype(str)
             df["BarColor"] = df[["Open","Close"]].apply(lambda o: "red" if o.Open>o.Close else "green", axis=1)
             return df
 
@@ -153,52 +162,72 @@ def app_cba():
                 titulo = "Gráfico"
                 st.markdown(f'<h3 style="color: #57cc99; text-align: left;">{titulo}</h3>', unsafe_allow_html=True)
                 df=tipo_vela()
-                ticker=selected.iloc[0]['Ticker']
-                caso=selected.iloc[0]['caso']
-                EntryTime=selected.iloc[0]['EntryTime']
-                ExitTime=selected.iloc[0]['ExitTime']
-                Tag=selected.iloc[0]['Tag']
+                print("val inicial:",df.shape[0], "index:", df.index[0] , "-", df.index[-1] )           
+                ticker=selected.iloc[0]['Ticker']               
+                caso=selected.iloc[0]['caso']              
+                EntryTime=selected.iloc[0]['EntryTime']                
+                print("ticker:", ticker,"EntryTime:",EntryTime)
+                ExitTime=selected.iloc[0]['ExitTime']               
+                tag=selected.iloc[0]['Tag']
+                df_strategySel = df_strategy.query("Ticker == @ticker and Tag==@tag").copy()
 
-                st.success(f"Fila Seleccionada {ticker} | Fecha Entrada: {EntryTime} | caso: {caso} | Tag: {Tag}")
+                st.success(f"Fila Seleccionada {ticker} | Fecha Entrada: {EntryTime} | caso: {caso} | Tag: {tag} | EMA Corta: {df_strategySel.iloc[0]['periodoCorto']}, EMA Larga: {df_strategySel.iloc[0]['periodoLargo']}")
                 #dfpl = df.query("companyName == @ticker and caso == @caso")
-                df_ini = df.query("companyName == @ticker and datetime==@EntryTime").copy()
-                df_fin = df.query("companyName == @ticker and datetime==@ExitTime").copy()
+                df_ini = df.query("companyName == @ticker and Datetime==@EntryTime").copy()
+                df_fin = df.query("companyName == @ticker and Datetime==@ExitTime").copy()
+                #print(df.info())
+                print("df_fin:", df_fin.shape[0])
                 i=df_ini.index.values[0]
                 if df_fin.shape[0]>0:
                     i_fin=df_fin.index.values[0]
+                #else:
+                #    i_fin=df_fin2.index.values[0]
                 #Obteniendo el dataframe del inicio de la evaluacion
                 #HALLAR POSEVAL
                 idvelainitend=0
-                
-                if Tag=="short":
+                if tag=="short":
                     velafintend = df[(df["cruce_medias"]==-1) & (df.index<i)].tail(1)
-                elif Tag=="long":
+                elif tag=="long":
                     velafintend=df[(df["cruce_medias"]==1) & (df.index<i)].tail(1)
 
                 if (velafintend.shape[0]>0):
                     idvelainitend = velafintend.index[0]
 
-                if ((idvelainitend-idvelainitend)<=75):
-                    posteval=i+75
-                elif ((idvelainitend-idvelainitend)>75):
-                    posteval=i+idvelainitend+10
-                dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:posteval]).copy()
-                dfpl['isBreakOutIni']=np.nan
-                dfpl['isBreakOutFinal']=np.nan
+                if pd.notna(i_fin):
+                    if ((i_fin-i)<=75):
+                        posteval=i+75
+                    elif ((i_fin-i)>75):
+                        posteval=i_fin+15
+                    dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:posteval]).copy()
+                else:
+                    dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:]).copy()
+
+                print(dfpl.shape[0])
+
+                if tag=="short":
+                    dfpl['isBreakOutIni2']=np.nan
+                    dfpl['isBreakOutFinal2']=np.nan
+                else:
+                    dfpl['isBreakOutIni']=np.nan
+                    dfpl['isBreakOutFinal']=np.nan
+
+                
+
                 #st.dataframe(dfpl)
                 #st.dataframe(df)
-                if Tag=="short"  and pd.notna(i):
-                    dfpl.loc[i,"isBreakOutIni"]=-1
-                elif Tag=="long"  and pd.notna(i):
+                if tag=="short"  and pd.notna(i):
+                    dfpl.loc[i,"isBreakOutIni2"]=-1
+                elif tag=="long"  and pd.notna(i):
                     dfpl.loc[i,"isBreakOutIni"]=1
-
-                if Tag=="short" and pd.notna(i_fin):
-                    dfpl.loc[i_fin,"isBreakOutFinal"]=-1
-                elif Tag=="long" and pd.notna(i_fin):
+                if tag=="short" and pd.notna(i_fin):
+                    dfpl.loc[i_fin,"isBreakOutFinal2"]=-1
+                elif tag=="long" and pd.notna(i_fin):
                     dfpl.loc[i_fin,"isBreakOutFinal"]=1
                 dfpl.loc[idvelainitend,"indicador"]=0
 
-                graficar(dfpl,"Caida Bajista - Caida Alcista",Tag)
+                print("h1")
+                graficar(dfpl,"Tendencia Bajista - Tendencia Alcista",tag)
+                print("h2")
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
