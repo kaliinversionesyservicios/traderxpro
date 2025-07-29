@@ -105,16 +105,17 @@ def graficar(dfpl,title,Tag):
     p.scatter(x="index", y="pivotHigh", marker="circle", size=3,
                     line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
     
-    p.scatter(x="index", y="pivotLow2", marker="circle", size=3,
-                    line_color="navy", fill_color="red", alpha=0.5, legend_label="Pivot Alcista", source=dfpl)
-    p.scatter(x="index", y="pivotHigh2", marker="circle", size=3,
-                    line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
+    # p.scatter(x="index", y="pivotLow2", marker="circle", size=3,
+    #                 line_color="navy", fill_color="red", alpha=0.5, legend_label="Pivot Alcista", source=dfpl)
+    # p.scatter(x="index", y="pivotHigh2", marker="circle", size=3,
+    #                 line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
     
-    p.scatter(x="index", y="pivotLow3", marker="circle", size=3,
-                    line_color="navy", fill_color="red", alpha=0.5, legend_label="Pivot Alcista", source=dfpl)
-    p.scatter(x="index", y="pivotHigh3", marker="circle", size=3,
-                    line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
+    # p.scatter(x="index", y="pivotLow3", marker="circle", size=3,
+    #                 line_color="navy", fill_color="red", alpha=0.5, legend_label="Pivot Alcista", source=dfpl)
+    # p.scatter(x="index", y="pivotHigh3", marker="circle", size=3,
+    #                 line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
     
+
     inicio = (dfpl[(dfpl.indicador==0)].index).tolist()[0]
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
     

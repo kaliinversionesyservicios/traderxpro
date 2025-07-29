@@ -23,9 +23,9 @@ def get_memory_usage():
     mem_mb = mem_bytes / (1024 * 1024)  # Convertir a MB
     return mem_mb
 
-st.title("Monitor de memoria")
+#st.title("Monitor de memoria")
 memoria = get_memory_usage()
-st.write(f"Uso actual de memoria del proceso: {memoria:.2f} MB")
+st.write(f"Uso actual de memoria: {memoria:.2f} MB")
 
 def app_cba():
     generarSidebar()
@@ -38,16 +38,16 @@ def app_cba():
     # url_strategy = '/home/ubuntu/script/data/strategy.txt'
 
     #LINDER
-    url_casos = "D:/data/tab_h.txt"
-    url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
-    url_trades="D:/data/backtesting/trades_cba.txt"
-    url_strategy = 'D:/data/strategy.txt'
+    # url_casos = "D:/data/tab_h.txt"
+    # url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/data/strategy.txt'
 
     # URLs DESARROLLO
-    # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
-    # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
-    # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
-    # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+    url_casos = "D:/TraderEstrategias/data/tab_h.txt"
+    url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
+    url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
 
     #trade_urls = { }
     mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
@@ -204,12 +204,16 @@ def app_cba():
                 #    i_fin=df_fin2.index.values[0]
                 #Obteniendo el dataframe del inicio de la evaluacion
                 #df=tipo_vela()
-                
-                
-
                 idvelainitend=0
-                
-                
+                #HALLAR POSEVAL
+                if tag=="short":
+                    velafintend = df[(df["cruce_medias"]==-1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
+                elif tag=="long":
+                    velafintend=df[(df["cruce_medias"]==1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
+
+                if (velafintend.shape[0]>0):
+                    idvelainitend = velafintend.index[0]
+                                
                 if pd.notna(i_fin):
                     if ((i_fin-i)<=75):
                         posteval=i+75
@@ -219,25 +223,11 @@ def app_cba():
                 else:
                     dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:]).copy()
 
-                #HALLAR POSEVAL
-                if tag=="short":
-                    velafintend = dfpl[(dfpl["cruce_medias"]==-1) & (dfpl.index<i)].tail(1)
-                elif tag=="long":
-                    velafintend=dfpl[(dfpl["cruce_medias"]==1) & (dfpl.index<i)].tail(1)
-
-                if (velafintend.shape[0]>0):
-                    idvelainitend = velafintend.index[0]
-
                 print(dfpl.shape[0])
                 
                 dfpl['Datetime'] = pd.to_datetime(dfpl.Datetime) 
                 dfpl["Datetime_str"] = dfpl["Datetime"].astype(str)
                 dfpl["BarColor"] = dfpl[["Open","Close"]].apply(lambda o: "red" if o.Open>o.Close else "green", axis=1)
-                
-
-                
-
-                
 
                 if tag=="short":
                     dfpl['isBreakOutIni2']=np.nan
@@ -245,8 +235,6 @@ def app_cba():
                 else:
                     dfpl['isBreakOutIni']=np.nan
                     dfpl['isBreakOutFinal']=np.nan
-
-                
 
                 #st.dataframe(dfpl)
                 #st.dataframe(df)
