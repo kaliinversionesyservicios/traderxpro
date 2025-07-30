@@ -3,7 +3,11 @@ import pandas as pd
 from bokeh.plotting import figure, show, column
 from bokeh.models import DatetimeTickFormatter, NumeralTickFormatter, CategoricalAxis,FactorRange, Span
 from bokeh.models import LabelSet, ColumnDataSource
+import gc
 
+
+
+gc.collect()
 
 def graficar(dfpl,title,Tag):
     #st.write(Tag)
@@ -11,7 +15,6 @@ def graficar(dfpl,title,Tag):
     inc = dfpl.query("Close>Open")
     dec = dfpl.query("Open>Close")
     #TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
-    print("hito0000")
     p = figure(width=1000, height=500,
             title=title,
             background_fill_color="#efefef",
@@ -23,7 +26,7 @@ def graficar(dfpl,title,Tag):
     p.xaxis.major_label_overrides = {
         i: date.strftime('%b %d %T') for i, date in zip(dfpl.index, dfpl["Datetime"])
     }
-    print("hito1111")
+
     p.segment("index", "High", "index","Low",  color="black", line_width=1, source=dfpl)
     p.vbar(    
         x="index",
@@ -55,9 +58,6 @@ def graficar(dfpl,title,Tag):
         color="red",
         legend_label="EMALarga",
         source=dfpl)
-    print("hito2222")
-    
-    
     
     
     if Tag=="long":    
@@ -97,7 +97,6 @@ def graficar(dfpl,title,Tag):
         legend_label="trailing_stop2",
         source=dfpl[i2:fin2])
     
-    print("hito3333")
     
     #codigo para dibujar pivots
     p.scatter(x="index", y="pivotLow", marker="circle", size=3,
