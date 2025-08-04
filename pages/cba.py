@@ -13,9 +13,12 @@ from utils.lst_ticker import tickers
 from utils.functions_cba import obtEntrada,revisarVelas,obtSlope
 import psutil
 import os
+import gc
 
 
 #proteger_pagina()
+
+gc.collect()
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())
@@ -23,25 +26,25 @@ def get_memory_usage():
     mem_mb = mem_bytes / (1024 * 1024)  # Convertir a MB
     return mem_mb
 
-st.title("Monitor de memoria")
+#st.title("Monitor de memoria")
 memoria = get_memory_usage()
-st.write(f"Uso actual de memoria del proceso: {memoria:.2f} MB")
+st.write(f"Uso actual de memoria: {memoria:.2f} MB")
 
 def app_cba():
     generarSidebar()
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    url_strategy = '/home/ubuntu/script/data/strategy.txt'
 
     #LINDER
-    url_casos = "D:/data/tab_h.txt"
-    url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
-    url_trades="D:/data/backtesting/trades_cba.txt"
-    url_strategy = 'D:/data/strategy.txt'
+    # url_casos = "D:/data/tab_h.txt"
+    # url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/data/strategy.txt'
 
     # URLs DESARROLLO
     # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
@@ -89,6 +92,7 @@ def app_cba():
         # Preprocesar columnas para grilla
         #columnas = ["Ticker", "EntryTime", "ExitTime","Duration","EntryPrice","ExitPrice",'Caso']
         data = df_grilla[columns].copy()
+        del df_grilla
         data.sort_values("EntryTime", ascending=False, inplace=True)
 
          # Columas Auxiliares para pintar filas actaules de grilla
@@ -204,12 +208,16 @@ def app_cba():
                 #    i_fin=df_fin2.index.values[0]
                 #Obteniendo el dataframe del inicio de la evaluacion
                 #df=tipo_vela()
-                
-                
-
                 idvelainitend=0
-                
-                
+                #HALLAR POSEVAL
+                if tag=="short":
+                    velafintend = df[(df["cruce_medias"]==-1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
+                elif tag=="long":
+                    velafintend=df[(df["cruce_medias"]==1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
+
+                if (velafintend.shape[0]>0):
+                    idvelainitend = velafintend.index[0]
+                                
                 if pd.notna(i_fin):
                     if ((i_fin-i)<=75):
                         posteval=i+75
@@ -219,25 +227,11 @@ def app_cba():
                 else:
                     dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:]).copy()
 
-                #HALLAR POSEVAL
-                if tag=="short":
-                    velafintend = dfpl[(dfpl["cruce_medias"]==-1) & (dfpl.index<i)].tail(1)
-                elif tag=="long":
-                    velafintend=dfpl[(dfpl["cruce_medias"]==1) & (dfpl.index<i)].tail(1)
-
-                if (velafintend.shape[0]>0):
-                    idvelainitend = velafintend.index[0]
-
                 print(dfpl.shape[0])
                 
                 dfpl['Datetime'] = pd.to_datetime(dfpl.Datetime) 
                 dfpl["Datetime_str"] = dfpl["Datetime"].astype(str)
                 dfpl["BarColor"] = dfpl[["Open","Close"]].apply(lambda o: "red" if o.Open>o.Close else "green", axis=1)
-                
-
-                
-
-                
 
                 if tag=="short":
                     dfpl['isBreakOutIni2']=np.nan
@@ -245,8 +239,6 @@ def app_cba():
                 else:
                     dfpl['isBreakOutIni']=np.nan
                     dfpl['isBreakOutFinal']=np.nan
-
-                
 
                 #st.dataframe(dfpl)
                 #st.dataframe(df)
