@@ -35,22 +35,25 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
 
     #LINDER
-    # url_casos = "D:/data/tab_h.txt"
-    # url_estadisticas="D:/data/backtesting/estadisticas_cba.txt"
-    # url_trades="D:/data/backtesting/trades_cba.txt"
-    # url_strategy = 'D:/data/strategy.txt'
+    # url_casos = "D:/scripts_aws/data/tab_h.txt"
+    # url_estadisticas="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/scripts_aws/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/scripts_aws/data/strategy.txt'
+    # url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
 
     # URLs DESARROLLO
-    # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
-    # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
-    # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
-    # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+    url_casos = "D:/TraderEstrategias/data/tab_h.txt"
+    url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
+    url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+
 
     #trade_urls = { }
     mostrar_style_notebook("Estrategia Tendencia Bajista - Tendencia Alcista")
@@ -63,12 +66,12 @@ def app_cba():
         df_estadisticas = pd.read_csv(url_estadisticas,sep='\t')   
         df_trades=pd.read_csv(url_trades,sep='\t')
         df_strategy = pd.read_csv(url_strategy,sep='\t')
-
+        df_prediccion=pd.read_csv(url_prediccion_strike,sep='\t')
         #st.dataframe(df)
         #Modificamos el tipo en datetime
 
         #st.dataframe(dfprincipal)
-
+        #st.dataframe(df_prediccion)
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
         df_trades['EntryTime']=pd.to_datetime(df_trades['EntryTime'])
@@ -186,11 +189,11 @@ def app_cba():
                 titulo = "Gráfico"
                 st.markdown(f'<h3 style="color: #57cc99; text-align: left;">{titulo}</h3>', unsafe_allow_html=True)
                 
-                print("val inicial:",df.shape[0], "index:", df.index[0] , "-", df.index[-1] )           
+                #print("val inicial:",df.shape[0], "index:", df.index[0] , "-", df.index[-1] )           
                 ticker=selected.iloc[0]['Ticker']               
                 caso=selected.iloc[0]['caso']              
                 EntryTime=selected.iloc[0]['EntryTime']                
-                print("ticker:", ticker,"EntryTime:",EntryTime)
+                #print("ticker:", ticker,"EntryTime:",EntryTime)
                 ExitTime=selected.iloc[0]['ExitTime']               
                 tag=selected.iloc[0]['Tag']
                 df_strategySel = df_strategy.query("Ticker == @ticker and Tag==@tag").copy()
@@ -227,7 +230,7 @@ def app_cba():
                 else:
                     dfpl = (df[(df.companyName==ticker)].loc[idvelainitend-backeval:]).copy()
 
-                print(dfpl.shape[0])
+                #print(dfpl.shape[0])
                 
                 dfpl['Datetime'] = pd.to_datetime(dfpl.Datetime) 
                 dfpl["Datetime_str"] = dfpl["Datetime"].astype(str)
@@ -251,10 +254,24 @@ def app_cba():
                 elif tag=="long" and pd.notna(i_fin):
                     dfpl.loc[i_fin,"isBreakOutFinal"]=1
                 dfpl.loc[idvelainitend,"indicador"]=0
+                
+                df_sub = df_estadisticas[df_estadisticas['Ticker']==ticker]
+                data_for_ticker=data[['Duration','EntryPrice','ExitPrice']]
 
-                print("h1")
+
+                df_prediccion_ticker=df_prediccion[df_prediccion['Ticker']==ticker]
+                #st.dataframe(df_prediccion_ticker)
+                df_prediccion_ticker=df_prediccion_ticker[df_prediccion_ticker['Tag']==tag][['semana','strike_price_q3']]
+                #st.dataframe(df_prediccion_ticker)
+
+                with kpi_holder:
+                    mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=data_for_ticker,df=df_prediccion_ticker)
+
+                #with kpi_holder:
+                    #mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
                 graficar(dfpl,"Tendencia Bajista - Tendencia Alcista",tag)
-                print("h2")
+                #st.write(ticker)
+                
             else:
                 st.warning("⚠️ No hay ninguna fila seleccionada.")
         else: 
@@ -263,7 +280,7 @@ def app_cba():
     except Exception as e:
         st.error(f"❌ Error al cargar datos: {e}")
 
-def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
+def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.DataFrame()):
     media_duracion=mean_duration(data['Duration'])
     media_precio=mean_price((data['ExitPrice']-data['EntryPrice'])/data['EntryPrice'])
    
@@ -285,12 +302,33 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
     sub_titulo=tickers.get(titulo)
 
+    kpi_extra=""
+    if not df.empty:
+        for i,fila in df.iterrows():
+            kpi_extra+= f"""
+        <div class="kpi-card">
+                        <div class="tooltip">Strike</div>
+                        <div class="kpi-title">📊 Strike Semana {fila['semana']}</div>
+                        <div class="kpi-value">{round(fila['strike_price_q3'], 4)}</div>
+                    </div>
+                    """
+
+    # if not df.empty:
+    #     for i, fila in df.iterrows():
+    #         kpi_extra += f"""
+    #         <div class="kpi-card">
+    #             <div class="tooltip">Predicción semana {fila['semana']}</div>
+    #             <div class="kpi-title">📊 Predicción S{i+1}</div>
+    #             <div class="kpi-value">{round(fila['strike_price_q3'], 4)}</div>
+    #         </div>
+    #         """
+
     st.markdown(f"""
         <style>
         .kpi-container {{
             display: grid;
             grid-template-columns: repeat(5, 1fr); 
-            gap: 20px;
+            gap: 5px;
             margin-top: 20px;
             justify-items: center;
             margin-bottom: 30px;
@@ -300,11 +338,11 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             pointer-events: auto;
             position: relative;
             width: 95%;
-            height: 140px;
+            height: 80px;
             background: linear-gradient(145deg, #121416, #1a1d1f);
             box-shadow: 0 4px 10px #212529, 0 0 10px rgb(33, 37, 41); 
             border-radius: 5px;
-            padding: 20px;
+            padding: 5px;
             overflow: visible;
             transition: transform 0.3s ease-in-out, background 0.3s, color 0.3s;
             color: #c7f9cc;
@@ -328,12 +366,12 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
             position: absolute;
             bottom: 10px;
             left: 15px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             color: #80ed99;
         }}
         .kpi-value {{
-            font-size: 40px;
+            font-size: 25px;
             font-weight: bold;
             color: #c7f9cc;
             z-index: 1;
@@ -419,9 +457,10 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None):
                 <div class="kpi-title">% Promedio por Operación</div>
                 <div class="kpi-value">{round(media_precio*100,2)}%</div>
             </div>
+            {kpi_extra}
         </div>
         """, unsafe_allow_html=True)
-
+    
 # Para probar la función de inmediato
 if __name__ == "__main__":
     app_cba()
