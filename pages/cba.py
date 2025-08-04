@@ -35,10 +35,11 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
 
     #LINDER
     # url_casos = "D:/scripts_aws/data/tab_h.txt"
@@ -48,11 +49,11 @@ def app_cba():
     # url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
 
     # URLs DESARROLLO
-    url_casos = "D:/TraderEstrategias/data/tab_h.txt"
-    url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
-    url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
-    url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
-    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
+    # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
+    # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
+    # url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
 
 
     #trade_urls = { }
