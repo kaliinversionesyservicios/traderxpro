@@ -257,19 +257,18 @@ def app_cba():
                 dfpl.loc[idvelainitend,"indicador"]=0
                 
                 df_sub = df_estadisticas[df_estadisticas['Ticker']==ticker]
-                data_for_ticker=data[['Duration','EntryPrice','ExitPrice']]
-
+                data_for_ticker=data[(data['Ticker']==ticker) & (data['Tag']==tag)]                    
+                data_for_ticker=data_for_ticker[['Duration','EntryPrice','ExitPrice','Tag','Strike']]
 
                 df_prediccion_ticker=df_prediccion[df_prediccion['Ticker']==ticker]
-                #st.dataframe(df_prediccion_ticker)
+                
                 df_prediccion_ticker=df_prediccion_ticker[df_prediccion_ticker['Tag']==tag][['semana','strike_price_q3']]
-                #st.dataframe(df_prediccion_ticker)
-
+                df_prediccion_ticker['semana_orden']=df_prediccion_ticker['semana'].apply(ordenar_semana)
+                df_prediccion_ticker=df_prediccion_ticker.sort_values("semana_orden")
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=data_for_ticker,df=df_prediccion_ticker)
 
-                #with kpi_holder:
-                    #mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=column_ticker_mean)
+                
                 graficar(dfpl,"Tendencia Bajista - Tendencia Alcista",tag)
                 #st.write(ticker)
                 
@@ -280,6 +279,18 @@ def app_cba():
 
     except Exception as e:
         st.error(f"❌ Error al cargar datos: {e}")
+
+
+def ordenar_semana(val):
+    if isinstance(val, str) and val.startswith(">s"):
+        return 999  # cualquier valor alto para que quede al final
+    elif isinstance(val, str) and val.startswith("s"):
+        try:
+            return int(val[1:])  # s1 → 1, s2 → 2, etc.
+        except:
+            return 998  # en caso de error
+    else:
+        return 998
 
 def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.DataFrame()):
     media_duracion=mean_duration(data['Duration'])
@@ -308,7 +319,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
         for i,fila in df.iterrows():
             kpi_extra+= f"""
         <div class="kpi-card">
-                        <div class="tooltip">Strike</div>
+                        <div class="tooltip">Strike predicción semana {fila['semana']}</div>
                         <div class="kpi-title">📊 Strike Semana {fila['semana']}</div>
                         <div class="kpi-value">{round(fila['strike_price_q3'], 4)}</div>
                     </div>
