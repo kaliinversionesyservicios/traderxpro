@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 from components.sidebar import generarSidebar
 from utils.spinner import mostrar_spinner
-import matplotlib.pyplot as plt
-import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode,GridUpdateMode
 import os
 import streamlit.components.v1 as components
