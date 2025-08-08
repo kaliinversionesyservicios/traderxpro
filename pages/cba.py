@@ -35,18 +35,18 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    url_strategy = '/home/ubuntu/script/data/strategy.txt'
-    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    # url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
 
     #LINDER
-    # url_casos = "D:/scripts_aws/data/tab_h.txt"
-    # url_estadisticas="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
-    # url_trades="D:/scripts_aws/data/backtesting/trades_cba.txt"
-    # url_strategy = 'D:/scripts_aws/data/strategy.txt'
-    # url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
+    url_casos = "D:/scripts_aws/data/tab_h.txt"
+    url_estadisticas="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/scripts_aws/data/backtesting/trades_cba.txt"
+    url_strategy = 'D:/scripts_aws/data/strategy.txt'
+    url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
 
     # URLs DESARROLLO
     # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
@@ -68,7 +68,6 @@ def app_cba():
         df_trades=pd.read_csv(url_trades,sep='\t')
         df_strategy = pd.read_csv(url_strategy,sep='\t')
         df_prediccion=pd.read_csv(url_prediccion_strike,sep='\t')
-        #st.dataframe(df)
         #Modificamos el tipo en datetime
 
         #st.dataframe(dfprincipal)
@@ -265,6 +264,7 @@ def app_cba():
                 df_prediccion_ticker=df_prediccion_ticker[df_prediccion_ticker['Tag']==tag][['semana','strike_price_q3']]
                 df_prediccion_ticker['semana_orden']=df_prediccion_ticker['semana'].apply(ordenar_semana)
                 df_prediccion_ticker=df_prediccion_ticker.sort_values("semana_orden")
+                df_sub=df_sub[df_sub['Tag']==tag]
                 with kpi_holder:
                     mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=data_for_ticker,df=df_prediccion_ticker)
 
