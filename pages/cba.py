@@ -266,7 +266,7 @@ def app_cba():
                 df_prediccion_ticker=df_prediccion_ticker.sort_values("semana_orden")
                 df_sub=df_sub[df_sub['Tag']==tag]
                 with kpi_holder:
-                    mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=data_for_ticker,df=df_prediccion_ticker)
+                    mostrar_kpis_por_ticker(df_sub, promedio=False, fecha=dict_fecha,data=data_for_ticker,df=df_prediccion_ticker,tag=tag)
 
                 
                 graficar(dfpl,"Tendencia Bajista - Tendencia Alcista",tag)
@@ -292,10 +292,14 @@ def ordenar_semana(val):
     else:
         return 998
 
-def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.DataFrame()):
+def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.DataFrame(),tag=None):
     media_duracion=mean_duration(data['Duration'])
-    media_precio=mean_price((data['ExitPrice']-data['EntryPrice'])/data['EntryPrice'])
-   
+    media_precio=0
+    if tag=="long":
+        media_precio=mean_price((data['ExitPrice']-data['EntryPrice']))
+    else:
+        media_precio=mean_price((data['EntryPrice']-data['ExitPrice']))
+
     start = fecha['EntryTime'].strftime("%d/%m/%Y %H:%M")
     end = fecha['ExitTime'].strftime("%d/%m/%Y %H:%M")
     if promedio:
@@ -467,7 +471,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
             <div class="kpi-card">
                 <div class="tooltip">Retorno porcentual promedio por trade</div>
                 <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio*100,2)}%</div>
+                <div class="kpi-value">{round(media_precio,2)}</div>
             </div>
             {kpi_extra}
         </div>
