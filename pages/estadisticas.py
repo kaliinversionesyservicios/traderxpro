@@ -62,11 +62,11 @@ def app_estadisticas():
 
     if selected is not None:
         if len(selected) > 0:
-            st.write("Mostrar plot")
-            st.write(selected)
+            #st.write("Mostrar plot")
+            #st.write(selected)
             ticker=selected.iloc[0]['Ticker']
             tag=selected.iloc[0]['Tag']
-            st.write(f"Mostrar plot para {ticker} - {tag}")
+            st.write(f"Backtesting")
             file_name=f"plot-{tag}-{ticker}.html"
             file_path=os.path.join(url_plots, file_name)
             if os.path.exists(file_path):
