@@ -70,8 +70,7 @@ def app_cba():
         df_prediccion=pd.read_csv(url_prediccion_strike,sep='\t')
         #Modificamos el tipo en datetime
 
-        st.dataframe(df_estadisticas)
-        st.dataframe(df_trades)
+        
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
         df_trades['EntryTime']=pd.to_datetime(df_trades['EntryTime'])
