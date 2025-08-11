@@ -70,8 +70,8 @@ def app_cba():
         df_prediccion=pd.read_csv(url_prediccion_strike,sep='\t')
         #Modificamos el tipo en datetime
 
-        #st.dataframe(dfprincipal)
-        #st.dataframe(df_prediccion)
+        st.dataframe(df_estadisticas)
+        st.dataframe(df_trades)
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
         df_trades['EntryTime']=pd.to_datetime(df_trades['EntryTime'])
@@ -203,7 +203,7 @@ def app_cba():
                 df_ini = df.query("companyName == @ticker and Datetime==@EntryTime").copy()
                 df_fin = df.query("companyName == @ticker and Datetime==@ExitTime").copy()
                 #print(df.info())
-                print("df_fin:", df_fin.shape[0])
+                #print("df_fin:", df_fin.shape[0])
                 i=df_ini.index.values[0]
                 if df_fin.shape[0]>0:
                     i_fin=df_fin.index.values[0]
@@ -296,10 +296,17 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
     media_duracion=mean_duration(data['Duration'])
     media_precio=0
     if tag=="long":
-        media_precio=mean_price((data['ExitPrice']-data['EntryPrice']))
+        #print(data)
+        data["retorno"]=(data['ExitPrice']-data['EntryPrice'])/data["EntryPrice"]
+        media_precio=data[data["retorno"]>0]
+        media_precio=mean_price(media_precio["retorno"])
+        #print(media_precio)
     else:
-        media_precio=mean_price((data['EntryPrice']-data['ExitPrice']))
-
+        #print(data)
+        data["retorno"]=(data['EntryPrice']-data['ExitPrice'])/data["ExitPrice"]
+        media_precio=data[data["retorno"]>0]
+        media_precio=mean_price(media_precio["retorno"])
+        #print(media_precio)
     start = fecha['EntryTime'].strftime("%d/%m/%Y %H:%M")
     end = fecha['ExitTime'].strftime("%d/%m/%Y %H:%M")
     if promedio:
@@ -469,9 +476,9 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
                 <div class="kpi-value">{media_duracion}</div>
             </div>
             <div class="kpi-card">
-                <div class="tooltip">Retorno porcentual promedio por trade</div>
-                <div class="kpi-title">% Promedio por Operación</div>
-                <div class="kpi-value">{round(media_precio,2)}</div>
+                <div class="tooltip">Promedio de operacioneciones, diferenciando entre posiciones largas y cortas.</div>
+                <div class="kpi-title">Promedio por operacion</div>
+                <div class="kpi-value">{round(media_precio,2)*100}</div>
             </div>
             {kpi_extra}
         </div>
