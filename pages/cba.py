@@ -9,12 +9,11 @@ from components.sidebar import generarSidebar
 from utils.proteger_pag import proteger_pagina
 from utils.spinner import mostrar_spinner
 from utils.style_notebook import mostrar_style_notebook
-from utils.lst_ticker import tickers
 from utils.functions_cba import obtEntrada,revisarVelas,obtSlope
 import psutil
 import os
 import gc
-
+from config import tickers
 
 #proteger_pagina()
 
@@ -29,7 +28,7 @@ def get_memory_usage():
 #st.title("Monitor de memoria")
 memoria = get_memory_usage()
 st.write(f"Uso actual de memoria: {memoria:.2f} MB")
-
+ticker_cb=tickers
 def app_cba():
     generarSidebar()
     mostrar_spinner(segundos=3)
@@ -79,8 +78,9 @@ def app_cba():
         dict_fecha={'EntryTime':df_estadisticas["EntryTime"].loc[0],'ExitTime':df_estadisticas["ExitTime"].loc[0]}
 
         # Mostrar métricas por ticker con selectbox
-        tickers = sorted(df_estadisticas["Ticker"].unique())
-        tickers.insert(0,"Todos")
+        #st.write(ticker_cb.keys())
+        tickers = ticker_cb.keys()
+        #tickers.insert(0,"Todos")
         ticker_current=st.selectbox("Selecciona un ticker", tickers,key="ticker_selector")
         #st.success(f"Ticker seleccionado: {ticker_current}")
         columns=['Ticker','EntryTime','ExitTime','EntryPrice','ExitPrice','Duration','caso','Tag']
@@ -322,6 +322,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
+    #AQUI
     sub_titulo=tickers.get(titulo)
 
     kpi_extra=""
