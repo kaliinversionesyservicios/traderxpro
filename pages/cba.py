@@ -34,18 +34,18 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    url_strategy = '/home/ubuntu/script/data/strategy.txt'
-    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    # url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
 
     #LINDER
-    # url_casos = "D:/scripts_aws/data/tab_h.txt"
-    # url_estadisticas="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
-    # url_trades="D:/scripts_aws/data/backtesting/trades_cba.txt"
-    # url_strategy = 'D:/scripts_aws/data/strategy.txt'
-    # url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
+    url_casos = "D:/scripts_aws/data/tab_h.txt"
+    url_estadisticas="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/scripts_aws/data/backtesting/trades_cba.txt"
+    url_strategy = 'D:/scripts_aws/data/strategy.txt'
+    url_prediccion_strike='D:/scripts_aws/data/prediccion_strike.txt'
 
     # URLs DESARROLLO
     # url_casos = "D:/TraderEstrategias/data/tab_h.txt"
@@ -68,8 +68,6 @@ def app_cba():
         df_strategy = pd.read_csv(url_strategy,sep='\t')
         df_prediccion=pd.read_csv(url_prediccion_strike,sep='\t')
         #Modificamos el tipo en datetime
-
-        
         df_estadisticas["EntryTime"]=pd.to_datetime(df_estadisticas["EntryTime"])
         df_estadisticas["ExitTime"]=pd.to_datetime(df_estadisticas["ExitTime"])
         df_trades['EntryTime']=pd.to_datetime(df_trades['EntryTime'])
@@ -115,8 +113,8 @@ def app_cba():
         data['EntryPrice'] = pd.to_numeric(data['EntryPrice'], errors='coerce')
         data['ExitPrice']  = pd.to_numeric(data['ExitPrice'],  errors='coerce')
         data['Strike'] = data['ExitPrice'] - data['EntryPrice']
-
         data_mean=data[['Duration','EntryPrice','ExitPrice']]
+       
         #RESERVA DE ESPACIO
         kpi_holder=st.empty()
         df_inicial=df_estadisticas.groupby("Ticker").mean(numeric_only=True).reset_index()
@@ -169,13 +167,6 @@ def app_cba():
 
         selected = grid_response["selected_rows"]
 
-        #FUNCION PROBADA
-        def tipo_vela():
-            df['Datetime'] = pd.to_datetime(df.Datetime) 
-            df["Datetime_str"] = df["Datetime"].astype(str)
-            df["BarColor"] = df[["Open","Close"]].apply(lambda o: "red" if o.Open>o.Close else "green", axis=1)
-            return df
-
         # 6) Cuando el usuario cambie el selectbox, **vuelve a pintar solo el placeholder**
         if ticker_current != "Todos":
             df_sub = df_estadisticas[df_estadisticas['Ticker']==ticker_current]
@@ -199,6 +190,8 @@ def app_cba():
 
                 st.success(f"Fila Seleccionada {ticker} | Fecha Entrada: {EntryTime} | caso: {caso} | Tag: {tag} | EMA Corta: {df_strategySel.iloc[0]['periodoCorto']}, EMA Larga: {df_strategySel.iloc[0]['periodoLargo']}")
                 #dfpl = df.query("companyName == @ticker and caso == @caso")
+                #AQUI
+                #st.dataframe(df)
                 df_ini = df.query("companyName == @ticker and Datetime==@EntryTime").copy()
                 df_fin = df.query("companyName == @ticker and Datetime==@ExitTime").copy()
                 #print(df.info())
@@ -214,6 +207,7 @@ def app_cba():
                 #HALLAR POSEVAL
                 if tag=="short":
                     velafintend = df[(df["cruce_medias"]==-1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
+                    #st.dataframe(velafintend)
                 elif tag=="long":
                     velafintend=df[(df["cruce_medias"]==1) & (df["companyName"]==ticker) & (df.index<i)].tail(1)
 
@@ -322,7 +316,6 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
         row = df_stats.iloc[0]
 
     titulo = f"Todos los Ticker" if promedio else row["Ticker"]
-    #AQUI
     sub_titulo=tickers.get(titulo)
 
     kpi_extra=""

@@ -46,22 +46,36 @@ def graficar(dfpl,title,Tag):
         line_color="green", 
         source=inc   
     )
-    p.line(
-        x="index", 
-        y="EMACorta", 
-        color="#ffb81c",
-        legend_label="EMACorta",
-        source=dfpl)
-    p.line(
-        x="index", 
-        y="EMALarga", 
-        color="red",
-        legend_label="EMALarga",
-        source=dfpl)
+
+    if Tag=="long":
+        p.line(
+            x="index", 
+            y="EMACorta", 
+            color="#ffb81c",
+            legend_label="EMACorta",
+            source=dfpl)
+        p.line(
+            x="index", 
+            y="EMALarga", 
+            color="red",
+            legend_label="EMALarga",
+            source=dfpl)
+    else:
+        p.line(
+            x="index", 
+            y="EMACorta2", 
+            color="#ffb81c",
+            legend_label="EMACorta 2",
+            source=dfpl)
+        p.line(
+            x="index", 
+            y="EMALarga2", 
+            color="red",
+            legend_label="EMALarga 2",
+            source=dfpl)
     
     
     if Tag=="long":    
-
         if (dfpl[dfpl["isBreakOutFinal"]==1].shape[0]>0):
             i2 = dfpl[dfpl["isBreakOutIni"]==1].index[0]
             fin2 = dfpl[dfpl["isBreakOutFinal"]==1].index[0]
@@ -94,7 +108,7 @@ def graficar(dfpl,title,Tag):
         x="index", 
         y="trailing_stop2", 
         color="black",
-        legend_label="trailing_stop2",
+        legend_label="trailing_stop 2",
         source=dfpl[i2:fin2])
     
     
