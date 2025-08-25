@@ -471,7 +471,7 @@ def mostrar_kpis_por_ticker(df_stats, promedio=False, fecha={},data=None,df=pd.D
             <div class="kpi-card">
                 <div class="tooltip">Promedio de operacioneciones, diferenciando entre posiciones largas y cortas.</div>
                 <div class="kpi-title">Promedio por operacion</div>
-                <div class="kpi-value">{round(media_precio,2)*100}</div>
+                <div class="kpi-value">{round(media_precio*100,2)}</div>
             </div>
             {kpi_extra}
         </div>
