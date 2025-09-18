@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 from bokeh.plotting import figure, show, column
-from bokeh.models import DatetimeTickFormatter, NumeralTickFormatter, CategoricalAxis,FactorRange, Span
-from bokeh.models import LabelSet, ColumnDataSource
+#from bokeh.models import DatetimeTickFormatter, NumeralTickFormatter, CategoricalAxis,FactorRange, Span
+from bokeh.models import LabelSet, ColumnDataSource, Label, CrosshairTool, NumeralTickFormatter, Span
+from bokeh.layouts import gridplot
 import gc
 
 
@@ -18,14 +19,17 @@ def graficar(dfpl,title,Tag):
     p = figure(width=1000, height=500,
             title=title,
             background_fill_color="#efefef",
-            tooltips=[("Index", "@index"),("Datetime", "@Datetime_str"), ("Open", "@Open"), ("High","@High"), ("Low","@Low"), ("Close","@Close")]
+            tooltips=[("Index", "@index"),("Datetime", "@Datetime_str"), ("Open", "@Open"), ("High","@High"), ("Low","@Low"), ("Close","@Close")],
+            sizing_mode="stretch_width"
             )
-    p.xaxis.major_label_orientation = 0.8 # radians
-    p.x_range.range_padding = 0.05
-    p.xaxis.axis_line_width = 4
+    #p.xaxis.major_label_orientation = 0.8 # radians
+    #p.x_range.range_padding = 0.05
+    #p.xaxis.axis_line_width = 4
     p.xaxis.major_label_overrides = {
         i: date.strftime('%b %d %T') for i, date in zip(dfpl.index, dfpl["Datetime"])
     }
+    # Ocultar etiquetas X en el gráfico superior para que no se repitan
+    p.xaxis.visible = False
 
     p.segment("index", "High", "index","Low",  color="black", line_width=1, source=dfpl)
     p.vbar(    
@@ -113,9 +117,9 @@ def graficar(dfpl,title,Tag):
     
     
     #codigo para dibujar pivots
-    p.scatter(x="index", y="pivotLow", marker="circle", size=3,
+    p.scatter(x="index", y="pivotLow", marker="circle", size=6,
                     line_color="navy", fill_color="red", alpha=0.5, legend_label="Pivot Alcista", source=dfpl)
-    p.scatter(x="index", y="pivotHigh", marker="circle", size=3,
+    p.scatter(x="index", y="pivotHigh", marker="circle", size=6,
                     line_color="navy", fill_color="green", alpha=0.5, legend_label="Pivot Bajista", source=dfpl)
     
     # p.scatter(x="index", y="pivotLow2", marker="circle", size=3,
@@ -131,6 +135,15 @@ def graficar(dfpl,title,Tag):
 
     inicio = (dfpl[(dfpl.indicador==0)].index).tolist()[0]
     vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
+    
+    labelInicio = Label(x=inicio,           # posición X (puedes ajustar según necesites)
+              y=dfpl['Low'].min(),                # posición Y = ubicación de la línea            
+              text=f"Ini. Tendencia", # texto a mostrar
+              text_font_size="9pt",
+              text_color="grey",
+              text_align="center",
+              background_fill_color="#efefef",
+              background_fill_alpha=0.7)
     
     if Tag=="long":
         entradas=dfpl[dfpl["isBreakOutIni"]==1]
@@ -176,7 +189,11 @@ def graficar(dfpl,title,Tag):
     p.legend.location="top_left"
     p.legend.click_policy="hide"
     p.renderers.extend([vline])
-    volume = figure(x_axis_type="datetime", height=120, width=1000, tooltips = [("Volume", "@Volume"),("Datetime", "@Datetime_str")],
+    p.add_layout(labelInicio)
+
+    p.add_tools(CrosshairTool(line_width=0.4, line_alpha=0.7))
+
+    volume = figure(x_axis_type="datetime", height=120, width=1000, tooltips = [("Volume", "@Volume"),("Datetime", "@Datetime_str")], sizing_mode="stretch_width",
     background_fill_color="#efefef",x_range=p.x_range)
 
     volume.x_range.range_padding = 0.05
@@ -195,8 +212,10 @@ def graficar(dfpl,title,Tag):
         i: date.strftime('%b %d %T') for i, date in zip(dfpl.index, dfpl["Datetime"])
     }
     volume.yaxis[0].formatter = NumeralTickFormatter(format="0,0")
-    fig = column(children=[p, volume], sizing_mode="scale_width")
-    st.bokeh_chart(fig, use_container_width=True)
+    #fig = column(children=[p, volume], sizing_mode="scale_width")
+    grid = gridplot([[p],[volume]], sizing_mode="stretch_width")
+    #st.bokeh_chart(fig, use_container_width=True)
+    st.bokeh_chart(grid)
 
 def mostrar_kpi():
     return 1
