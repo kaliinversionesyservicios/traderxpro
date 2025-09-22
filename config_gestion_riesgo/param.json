@@ -1,0 +1,40 @@
+{   
+    "carlosml0287": {    
+    "account_idpaper": "DUA930104",
+    "account_idlive": "U15914521",
+    "ip_paper": "3.13.179.45",
+    "ip_live": "3.13.179.45",
+    "port_paper": 4002,
+    "port_live": 4002,
+    "clientid_Dash": 801,
+    "clientid_Bot": 501,
+    "token_flexquery":"747110534787996057748287",
+    "id_flexquery":"1287673",
+    "table_IBKR_Trades_paper":"IBKR_Trades_paper",
+    "table_IBKR_Account_paper":"IBKR_Account_paper",
+    "table_IBKR_Trades_live":"IBKR_Trades",
+    "table_IBKR_Account_live":"IBKR_Account",
+    "aws_access_key_id":"AKIAYCUP6PDKIQ25PGUY",
+    "aws_secret_access_key":"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"
+    },
+    "otro1": {    
+    "account_idpaper": "DUA930104",
+    "account_idlive": "U15914521",
+    "ip_paper": "3.13.179.45",
+    "ip_live": "3.13.179.45",
+    "port_paper": 4002,
+    "port_live": 4002,
+    "clientid_paper": 801,
+    "clientid_live": 901
+    },
+    "otro2": {    
+    "account_idpaper": "DUA930104",
+    "account_idlive": "U15914521",
+    "ip_paper": "3.13.179.45",
+    "ip_live": "3.13.179.45",
+    "port_paper": 4002,
+    "port_live": 4002,
+    "clientid_paper": 801,
+    "clientid_live": 901
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "inicio_ts": 50.0,
+    "inv_sesion": 250.0,
+    "precio_max_prima": 90.0,
+    "cant_trades": 4,
+    "tipo_cuenta": "PAPER",
+    "status_bot": "DESACTIVADO"
+}
