@@ -13,8 +13,10 @@ def app_estadisticas():
     st.write("Estadisticas")
 
     #URL PRODUCCION
-    url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_plots="/home/ubuntu/script/plots"
+    # url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_plots="/home/ubuntu/script/plots"
+    url_trades="/mnt/data/backtesting/estadisticas_cba.txt"
+    url_plots="/mnt/plots"
 
     #url  LINDER 
     # url_trades="D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
