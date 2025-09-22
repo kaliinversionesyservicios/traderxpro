@@ -34,11 +34,16 @@ def app_cba():
     mostrar_spinner(segundos=3)
 
     # URLs PRODUCCION
-    url_casos = "/home/ubuntu/script/data/tab_h.txt"
-    url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
-    url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
-    url_strategy = '/home/ubuntu/script/data/strategy.txt'
-    url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    # url_casos = "/home/ubuntu/script/data/tab_h.txt"
+    # url_estadisticas="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    # url_trades="/home/ubuntu/script/data/backtesting/trades_cba.txt"
+    # url_strategy = '/home/ubuntu/script/data/strategy.txt'
+    # url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    url_casos = "/mnt/data/tab_h.txt"
+    url_estadisticas="/mnt/data/backtesting/estadisticas_cba.txt"
+    url_trades="/mnt/data/backtesting/trades_cba.txt"
+    url_strategy = '/mnt/data/strategy.txt'
+    url_prediccion_strike='/mnt/data/prediccion_strike.txt'
 
     #LINDER
     # url_casos = "D:/scripts_aws/data/tab_h.txt"
