@@ -2,7 +2,7 @@ import streamlit as st
 from utils.custom_style import load_css
 
 # Configuración de la página
-st.set_page_config(page_title="TraderXPRO", layout="wide")
+st.set_page_config(page_title="Trading ScanX", layout="wide")
 load_css("styles/style.css")
 #from streamlit_cookies_manager import EncryptedCookieManager
 

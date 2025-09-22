@@ -14,6 +14,11 @@ import psutil
 import os
 import gc
 from config import tickers
+from streamlit_cookies_manager import EncryptedCookieManager
+
+cookies = EncryptedCookieManager(prefix="miapp", password="clave-secreta-123")
+if not cookies.ready():
+    st.stop()
 
 #proteger_pagina()
 
@@ -27,7 +32,15 @@ def get_memory_usage():
 
 #st.title("Monitor de memoria")
 memoria = get_memory_usage()
+
+
 st.write(f"Uso actual de memoria: {memoria:.2f} MB")
+
+# Si ya está guardado el usuario, lo recupero
+if "usuario" not in st.session_state:
+    st.session_state.usuario = cookies.get("usuario")
+
+st.write(f"Usuario:",st.session_state.get("usuario"))
 ticker_cb=tickers
 def app_cba():
     generarSidebar()
@@ -57,7 +70,7 @@ def app_cba():
     # url_estadisticas="D:/TraderEstrategias/data/backtesting/estadisticas_cba.txt"
     # url_trades="D:/TraderEstrategias/data/backtesting/trades_cba.txt"
     # url_strategy = 'D:/traderEstrategias2/backtesting/strategy.txt'
-    # url_prediccion_strike='/home/ubuntu/script/data/prediccion_strike.txt'
+    # url_prediccion_strike='D:/TraderEstrategias/data/prediccion_strike.txt'
 
 
     #trade_urls = { }
@@ -167,6 +180,7 @@ def app_cba():
             width='100%',
             fit_columns_on_grid_load=True,
             allow_unsafe_jscode=True  # <- Necesario para usar JsCode
+
         )
         
 

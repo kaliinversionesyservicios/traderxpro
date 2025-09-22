@@ -5,6 +5,16 @@ from dotenv import load_dotenv
 import os
 import time
 from utils.spinner import mostrar_spinner
+from streamlit_cookies_manager import EncryptedCookieManager
+
+
+# Inicializar cookie manager
+cookies = EncryptedCookieManager(
+    prefix="miapp",
+    password="clave-secreta-123"
+)
+if not cookies.ready():
+    st.stop()
 
 #Cargar las variables de entorno
 load_dotenv()
@@ -77,6 +87,9 @@ def aplicar_estilos():
     </style>
     """, unsafe_allow_html=True)
 
+    
+
+
 
 # Inicializar Firebase
 if not firebase_admin._apps:
@@ -112,7 +125,17 @@ def validar_usuario(username,password):
         st.error(f"Error al validar: {e}")
         return False
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
+ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
+CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "usuario.json")
 
+def guardar_usuario(config):
+    # Crear carpeta si no existe
+    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+    
+    # Guardar JSON
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
 
 # Formulario de login
 def login():
@@ -131,7 +154,10 @@ def login():
     # Lógica de validación
     if login_button:
         if validar_usuario(usuario,contraseña):
-            st.session_state["autenticado"] = True
+            st.session_state["autenticado"] = True           
+            st.session_state.usuario = usuario
+            cookies["usuario"] = usuario
+            cookies.save()
             st.success("✅ ¡Bienvenido! Acceso autorizado.")
             st.toast("Redirigiendo a tu panel...", icon="🔄")
             time.sleep(1.5)
