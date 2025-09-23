@@ -15,7 +15,7 @@ ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
 CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
 CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
 
-user="carlosml0287" #configurar
+user="carlosml0287" #CAMBIAR DE SER NECESARIO
 
 def cargar_usuario():
     """Carga parametros de Usuario"""

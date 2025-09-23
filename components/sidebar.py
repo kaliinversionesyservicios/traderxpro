@@ -58,7 +58,7 @@ def generarSidebar():
         #st.page_link("pages/cncf.py", label="↙ Caida Normal-Fuerte")
         st.page_link("pages/cba.py", label="⇧ Tendencia Bajista Alcista")
         st.page_link("pages/estadisticas.py",label="Ϟ Estadisticas")
-        st.page_link("pages/bot_manager.py",label="Ϟ Bot Manager")
+        st.page_link("pages/dashboardIBKR.py",label="Ϟ Dashboard IBKR")
         #st.page_link("pages/piso_fuerte.py", label="↙ Piso Fuerte")
         #st.page_link("pages/prueba.py", label="Prueba")
 
