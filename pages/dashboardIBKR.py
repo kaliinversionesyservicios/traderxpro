@@ -169,8 +169,8 @@ if user in usuarios:
 
 
 
-dynamodb = boto3.resource("dynamodb", region_name="us-west-2",
-                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
+dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
+                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -220,8 +220,8 @@ for indice, acc in enumerate(accountSummary_data):
 # Auto-refresh cada 15 segundo
 st_autorefresh(interval=15000, key="refresh")
 
-path_file = "D:/TraderEstrategias" #DESARROLLO
-#path_file = "/home/ubuntu/script" #PRODUCCION
+# path_file = "D:/TraderEstrategias" #DESARROLLO
+path_file = "/home/ubuntu/script" #PRODUCCION
 #Carga de Variables
 #Leer el archivo de Variables
 ruta_archivo=f'{path_file}/data/strategy.txt'
@@ -994,11 +994,11 @@ def cargar_estrategias():
 
 with tab4:
     # URL PRODUCCION
-    #url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
     # URL LINDER
     #url_trades = "D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
     #URL CARLOS
-    url_trades="D:/data/backtesting/estadisticas_cba.txt"
+    # url_trades="D:/data/backtesting/estadisticas_cba.txt"
 
     ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
 
