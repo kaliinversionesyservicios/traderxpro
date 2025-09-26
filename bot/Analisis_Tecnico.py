@@ -11,14 +11,13 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
         cruce_medias = "cruce_medias2"
         EMACorta="EMACorta2"
 
-
     indiceFinal=0
     indiceFinal2=0
     if (dfpl[cruce_medias][i]==1): #ALCISTA
         #ALZA, velas por encima de promedios moviles
         #ultimo high por encima y ultimo low cerca a los promedios
         #Obtener Siguiente Low
-        siguiente_L = dfpl[(dfpl.index>=j) & (dfpl.index<idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2))].head(1)        
+        siguiente_L = dfpl[(dfpl.index>=j) & (dfpl.index<=idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2))].head(1)        
         if (siguiente_L.shape[0]>0):         
             #if (((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0]['EMA35'])<1.5) | ((siguiente_L.iloc[0]['adx'])>20)):
             if (
@@ -27,7 +26,7 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                     (siguiente_L.iloc[0]['adx']>var_adx1)
                 &
                     (
-                        (    
+                        (
                         ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*2) &
                         ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
                         )
@@ -37,8 +36,8 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                         ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
                         )
                     )
-
-
+                & #Color de vela Verde
+                    (siguiente_L.iloc[0]["Close"]>=siguiente_L.iloc[0]["Open"])
             ):
                 indiceFinal = siguiente_L.index[0]
                 indiceFinal2 = siguiente_L.index[0]
@@ -58,6 +57,8 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                         ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
                         )
                     )
+                & #Color de vela Verde
+                    (siguiente_L.iloc[0]["Close"]>=siguiente_L.iloc[0]["Open"])
             ):
                 indiceFinal = siguiente_L.index[0]
                 indiceFinal2 = siguiente_L.index[0]
@@ -70,18 +71,20 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                     (siguiente_L.iloc[0]['adx']>15)
                 &
                     (siguiente_L.iloc[0]['ATR']>=siguiente_L.iloc[0]['EMA35_ATR']*1.15)
+                &   #Color de vela Verde
+                    (siguiente_L.iloc[0]["Close"]>=siguiente_L.iloc[0]["Open"])
             ):
                 indiceFinal = siguiente_L.index[0]
                 indiceFinal2 = siguiente_L.index[0]
 
-            else:
-                #si es cero ir a la siguiente entrada
-                indiceFinal2prev = siguiente_L.index[0]
-                siguiente_L2 = dfpl[(dfpl.index>=indiceFinal2prev) & (dfpl.index<idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2) )].head(1)
-                if (siguiente_L2.shape[0]>0):
-                    indiceFinal2 = siguiente_L2.index[0]
-                else:
-                    indiceFinal2 = siguiente_L.index[0]
+            # else: #Revisar cuando el pivot es 1 o 2 velas anteriores pero rojas y la ultima recien empieza a subir con vela verde
+            #      #si es cero ir a la siguiente entrada
+            #      indiceFinal2prev = siguiente_L.index[0]
+            #      siguiente_L2 = dfpl[(dfpl.index>=indiceFinal2prev) & (dfpl.index<=idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2) )].head(1)
+            #      if (siguiente_L2.shape[0]>0):
+            #          indiceFinal2 = siguiente_L2.index[0]
+            #      else:
+            #          indiceFinal2 = siguiente_L.index[0]
 
     elif (dfpl[cruce_medias][i]==-1): #BAJISTA                    
         #BAJA, velas por debajo de promedios moviles
@@ -109,6 +112,8 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                         )
                     
                     )
+                    & #Color de vela Rojo
+                    (siguiente_H.iloc[0]["Open"]>=siguiente_H.iloc[0]["Close"])
                 ):
                 indiceFinal = siguiente_H.index[0]
                 indiceFinal2 = siguiente_H.index[0]
@@ -130,6 +135,8 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                         ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])>=-(siguiente_H.iloc[0]['ATR']*2))
                         )
                     )
+                    & #Color de vela Rojo
+                    (siguiente_H.iloc[0]["Open"]>=siguiente_H.iloc[0]["Close"])
                 ):
                 indiceFinal = siguiente_H.index[0]
                 indiceFinal2 = siguiente_H.index[0]
@@ -142,17 +149,19 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                     (siguiente_H.iloc[0]['adx']>15)
                     &
                     (siguiente_H.iloc[0]['ATR']>=siguiente_H.iloc[0]['EMA35_ATR']*1.15)
+                    & #Color de vela Rojo
+                    (siguiente_H.iloc[0]["Open"]>=siguiente_H.iloc[0]["Close"])
                 ):
                 indiceFinal = siguiente_H.index[0]
                 indiceFinal2 = siguiente_H.index[0]
-            else:
-                #si es cero ir a la siguiente entrada
-                indiceFinal2prev = siguiente_H.index[0]
-                siguiente_H2 = dfpl[(dfpl.index>=indiceFinal2prev) & (dfpl.index<idvelafintend) & ((dfpl["isPivot"]==1) | (dfpl["isPivot2"]==1) | (dfpl["isPivot3"]==1))].head(1)
-                if siguiente_H2.shape[0]>0:
-                    indiceFinal2 = siguiente_H2.index[0]
-                else:
-                    indiceFinal2 = siguiente_H.index[0]
+            # else:
+            #     #si es cero ir a la siguiente entrada
+            #     indiceFinal2prev = siguiente_H.index[0]
+            #     siguiente_H2 = dfpl[(dfpl.index>=indiceFinal2prev) & (dfpl.index<idvelafintend) & ((dfpl["isPivot"]==1) | (dfpl["isPivot2"]==1) | (dfpl["isPivot3"]==1))].head(1)
+            #     if siguiente_H2.shape[0]>0:
+            #         indiceFinal2 = siguiente_H2.index[0]
+            #     else:
+            #         indiceFinal2 = siguiente_H.index[0]
     return indiceFinal, indiceFinal2
 
 #Funcion revisar Velas

@@ -29,8 +29,8 @@ def get_next_id(sequence_name):
 def create_item(table_name, item):
     try:       
         table = dynamodb.Table(table_name)        
-        new_id = get_next_id(table_name) #genera secuencia unica        
-        item["id"] = new_id        
+        #new_id = get_next_id(table_name) #genera secuencia unica        
+        #item["id"] = new_id        
         response = table.put_item(Item=item)        
         print(f"✅ Item creado en {table_name}: {item}")        
         return response

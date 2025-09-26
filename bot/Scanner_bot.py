@@ -22,12 +22,14 @@ import funciones_ibkr as ibkr
 from scipy.signal import argrelextrema
 from zoneinfo import ZoneInfo
 import json
+import csv
 
 # Ruta donde se guardará la configuración
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (bot)
 ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
 CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
 CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
+CONFIG_FILE3 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
 
 user="carlosml0287" #configurar
 
@@ -39,20 +41,30 @@ def cargar_usuario():
     return None
 
 def cargar_config():
-    """Carga configuracion de Usuario"""
+    """Carga configuracion"""
     if os.path.exists(CONFIG_FILE2):
         with open(CONFIG_FILE2, "r") as f:
             return json.load(f)
     return None
 
+# def cargar_casos():
+#     """Carga ticket con mayor sharper ratio or win rate"""
+#     with open(CONFIG_FILE3, newline="", encoding="utf-8") as f:
+#         reader = pd.read_csv(f)
+#         #Convertir cada fila en una lista
+#         casos = list(reader)
+#     return casos
+
 usuarios = cargar_usuario()
 config = cargar_config()
+#casos = cargar_casos()
 
 ip=""
 port = 0
 clientId = 9999
 tipo_cuenta = config.get("tipo_cuenta")
 table_posiciones_abiertas=""
+inicio_ts = config.get("inicio_ts")
 
 if user in usuarios:
     valores = usuarios[user]
@@ -268,18 +280,20 @@ else:
     print("Archivo no existe. Se creó un DataFrame vacío.")
 
 
-print("===ESTADISTICAS===")
-print(dfestadisticas[(dfestadisticas["Sharpe Ratio"]>1.7) | (dfestadisticas["Win Rate [%]"]>=75)] )
-
+#print("===ESTADISTICAS===")
+#print(dfestadisticas[(dfestadisticas["Sharpe Ratio"]>1.7) | (dfestadisticas["Win Rate [%]"]>=75)] )
 #excluir = ['GOOG', 'AAPL']
-
-df_estadisticas = dfestadisticas[(((dfestadisticas["Sharpe Ratio"]>1.7) | (dfestadisticas["Win Rate [%]"]>=75)))]
+#df_estadisticas = dfestadisticas[(((dfestadisticas["Sharpe Ratio"]>1.7) | (dfestadisticas["Win Rate [%]"]>=75)))]
 
 #for ticker in df_tickers["Ticker"]:
 #    print(ticker)
-
-df_tickers = df_estadisticas[['Ticker']].drop_duplicates()
+#df_tickers = df_estadisticas[['Ticker']].drop_duplicates()
 #df_tickers = df_tickers.head(2)
+casos = pd.read_csv(CONFIG_FILE3) 
+print(casos)
+df_casos = pd.DataFrame(casos)
+print(df_casos)
+df_tickers = df_casos[['Ticker']].drop_duplicates()
 
 print("cantidad de tickers:", df_tickers.shape[0])
 
@@ -511,9 +525,10 @@ for i,row in df_tickers.iterrows():
 
 
     #Revisar si la seleccion del ticket es a la ALZA o a la BAJA
-    ticker_alza = df_estadisticas[df_estadisticas["Tag"]=="long"].shape[0]
-    ticker_baja = df_estadisticas[df_estadisticas["Tag"]=="short"].shape[0]
-    
+    ticker_alza = df_casos[df_casos["Tag"]=="long"].shape[0]
+    ticker_baja = df_casos[df_casos["Tag"]=="short"].shape[0]
+
+    now = datetime.utcnow()
 
     if ticker_alza>0:
         #=== OBTENCION DE CASOS ALCISTAS===
@@ -547,9 +562,11 @@ for i,row in df_tickers.iterrows():
                         print("===PASO HORAS===")
                         cantidad=1
                         precio = 0
-                        tipo="call"
+                        right="C"
                         fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S")                
                         print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
+
+                        
 
                         filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='long'")
                         mov_calculado = np.float64(filtro.iloc[0]["strike_price_q3"])
@@ -570,15 +587,25 @@ for i,row in df_tickers.iterrows():
                             print("take_profit_price:",order_call["take_profit_price"])
                             print("parent_orderId:",order_call["parent_orderId"])
 
+                            contract = Contract(order_put["contract"])
+                            financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
+
                             # Guardar informacion relevante en base de datos dynamo
                             table_name = table_posiciones_abiertas
                             bd.create_item(table_name, {
-                                "ticker": ticker,
+                                "conId": contract.conId,                                
+                                "ticker": contrato.symbol,
+                                "financial_instrument":financial_instrument,
                                 "cantidad": cantidad,
-                                "precio_entrada": precio,
-                                "tipo":tipo,
+                                "precio_entrada": None,
+                                "right":right,
                                 "stike_calculado": strike_calculado,
-                                "fecha_apertura": fecha_entrada
+                                "fecha_apertura": fecha_entrada,
+                                "fecha_registro": now,
+                                "inicio_ts": inicio_ts,
+                                "fecha_inicio_ts": None,
+                                "modo_entrada": 1, #1: bot
+                                "fecha_cierre": None
                             })
     
     if ticker_baja>0:
@@ -609,7 +636,7 @@ for i,row in df_tickers.iterrows():
                         print("===PASO HORAS===")
                         cantidad=1
                         precio = 0
-                        tipo="put"
+                        right="P"
                         fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S") 
                         print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
                         #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
@@ -631,15 +658,25 @@ for i,row in df_tickers.iterrows():
                             print("take_profit_price:",order_put["take_profit_price"])
                             print("parent_orderId:",order_put["parent_orderId"])
 
+                            contrat = Contract(order_put["contract"])
+                            financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
+
                             # Guardar informacion relevante en base de datos dynamo
                             table_name = table_posiciones_abiertas
                             bd.create_item(table_name, {
+                                "conId": contrato.conId,
+                                "financial_instrument":financial_instrument,
                                 "ticker": ticker,
                                 "cantidad": cantidad,
                                 "precio_entrada": precio,
-                                "tipo": tipo,
+                                "right": right,
                                 "stike_calculado": strike_calculado,
-                                "fecha_apertura": fecha_entrada
+                                "fecha_apertura": fecha_entrada,
+                                "fecha_registro": now,
+                                "inicio_ts": inicio_ts,
+                                "fecha_inicio_ts": None,
+                                "modo_entrada": 1, #1: bot
+                                "fecha_cierre": None
                             })
             
 
