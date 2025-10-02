@@ -15,10 +15,91 @@ from scipy.signal import argrelextrema
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 from decimal import Decimal
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from bot import script_crud as bd
+from components.sidebar import generarSidebar
+from streamlit_cookies_manager import EncryptedCookieManager
 
 # 1) Página en modo ancho
-st.set_page_config(page_title="Dashboard - IBKR", layout="wide", initial_sidebar_state="collapsed")
-API_BASE = "http://127.0.0.1:8000"
+st.set_page_config(page_title="IBKR Dashboard", layout="wide", initial_sidebar_state="collapsed")
+st.markdown(
+    "<h1 style=' background: linear-gradient(to right,#57cc99, #c7f9cc);-webkit-background-clip: text; -webkit-text-fill-color: transparent; '>IBKR Dashboard</h1>"
+    "<h4 style='color:#c7f9cc;'>Control y monitoreo de tu cuenta y ejecución de bots</h4>",
+    unsafe_allow_html=True
+)
+
+generarSidebar()
+
+#----------------------------
+# VALIDACION DE USUARIO
+#----------------------------
+cookies = EncryptedCookieManager(prefix="miapp", password="clave-secreta-123")
+if not cookies.ready():
+    st.stop()
+
+if "usuario" not in st.session_state:
+    st.session_state.usuario = cookies.get("usuario")
+
+# st.write(f"Usuario:",st.session_state.get("usuario"))
+user=st.session_state.get("usuario")
+
+if not st.session_state.usuario:
+    st.warning("⚠️ No estás autenticado. Inicia sesión primero.")
+    st.switch_page("inicio.py")
+    st.stop()
+
+#----------------------
+# VARIABLES GLOBALES
+#----------------------
+#path_folder="/mnt/efs" #PRODUCCION
+path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+
+# API_BASE = "http://127.0.0.1:8000"
+client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
+#Verificar si existe un usuario
+
+match user:
+    case "carlosml0287":
+        SCHEDULE_NAME="cron_scanner_bot_carlos"
+        #API_BASE="http://3.13.179.45:8000"
+        API_BASE = "http://127.0.0.1:8000"
+    case "investyolanda1":
+        SCHEDULE_NAME="cron_scanner_bot_yolanda"
+        API_BASE="http://3.140.173.63:8000"
+    case "Ventanilla39":
+        SCHEDULE_NAME="cron_scanner_bot_elsy"
+        API_BASE="http://3.149.168.211:8000"
+    case "usuario04":
+        SCHEDULE_NAME="cron_scanner_usuario04"
+CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json"
+
+def get_schedule_state():
+    try:
+        response = client.get_schedule(Name=SCHEDULE_NAME)
+        return response.get("State", "UNKNOWN"), response  # devolvemos todo el schedule
+    except Exception as e:
+        return f"Error: {e}", None
+
+def update_schedule_state(new_state):
+    try:
+        # Obtener el schedule actual
+        state, schedule = get_schedule_state()
+        if not schedule:
+            return "No se pudo leer el schedule"
+
+        # Llamar a update_schedule con todos los parámetros obligatorios
+        client.update_schedule(
+            Name=schedule["Name"],
+            Description=schedule.get("Description", ""),
+            ScheduleExpression=schedule["ScheduleExpression"],
+            FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
+            Target=schedule["Target"],
+            State=new_state
+        )
+        return f"Estado cambiado a {new_state}"
+    except Exception as e:
+        return f"Error: {e}"
 
 # ----------------------
 # Funciones para obtener datos del backend
@@ -88,6 +169,17 @@ def fetch_datamkt(ticker):
         st.warning(f"Error fetching portfolio: {e}")
     return []
 
+def fetch_alldatamkt():
+    #df_datamkt = pd.DataFrame()
+    try:
+        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=7) 
+        if resp.status_code == 200: 
+            bars = resp.json()
+        return bars
+    except Exception as e:
+        st.warning(f"Error fetching alldatamark: {e}")
+    return []
+
 # def fetch_allorder():
 #     try:
 #         resp = requests.get(f"{API_BASE}/allorder", timeout=2)
@@ -96,6 +188,8 @@ def fetch_datamkt(ticker):
 #     except Exception as e:
 #         st.warning(f"Error fetching order: {e}")
 #     return []
+
+
 
 # Ruta donde se guardará la configuración
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
@@ -123,15 +217,10 @@ def cargar_config():
 
 st.title("📊 Dashboard - IBKR")
 
-
-
-
  # Cargar valores previos si existen
 config_prev = cargar_config()
 valTipo_cuenta_prev = config_prev.get("tipo_cuenta") if config_prev else ""
 valStatus_bot_prev= config_prev.get("status_bot") if config_prev else ""
-
-
 
 usuarios = cargar_usuario()
 config = cargar_config()
@@ -149,15 +238,21 @@ if user in usuarios:
     print(f"Datos de {user}:")
     for clave, valor in valores.items():
         if tipo_cuenta=="PAPER":
+            if clave=="account_idpaper":
+                id_file=valor
             if clave=="table_IBKR_Trades_paper":
                 table_IBKR_Trades=valor
             if clave=="table_IBKR_Account_paper":
-                table_IBKR_Account=valor           
+                table_IBKR_Account=valor                  
+            table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"            
         elif tipo_cuenta=="LIVE":
+            if clave=="account_idlive":
+                id_file=valor
             if clave=="table_IBKR_Trades_live":
                 table_IBKR_Trades=valor
             if clave=="table_IBKR_Account_live":
                 table_IBKR_Account=valor
+            table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
         if clave=="aws_access_key_id":
             acceskey=valor
         if clave=="aws_secret_access_key":
@@ -165,12 +260,10 @@ if user in usuarios:
         if clave=="token_flexquery":
             token=valor
         if clave=="id_flexquery":
-            queryid=valor
-
-
+            queryid=valor        
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -184,8 +277,6 @@ tableAccounts = dynamodb.Table(table_IBKR_Account)
 # Scan DynamoDB
 response = table.scan()
 responseAccounts = tableAccounts.scan()
-
-
 
 itemsAccounts =  responseAccounts ["Items"] #Cuentas dynamoDB
 for indice, account in enumerate(itemsAccounts):
@@ -220,8 +311,8 @@ for indice, acc in enumerate(accountSummary_data):
 # Auto-refresh cada 15 segundo
 st_autorefresh(interval=15000, key="refresh")
 
-# path_file = "D:/TraderEstrategias" #DESARROLLO
-path_file = "/home/ubuntu/script" #PRODUCCION
+path_file = "D:/TraderEstrategias" #DESARROLLO
+#path_file = "/home/ubuntu/script" #PRODUCCION
 #Carga de Variables
 #Leer el archivo de Variables
 ruta_archivo=f'{path_file}/data/strategy.txt'
@@ -233,7 +324,6 @@ else:
     # Crear un DataFrame vacío
     df_variable = pd.DataFrame()
     print("Archivo no existe. Se creó un DataFrame vacío.")
-
 
 
 
@@ -344,7 +434,7 @@ st.markdown("---")
 
 tab1, tab2, tab3, tab4 = st.tabs(["📈 Portafolio", "🔄 Trades", "📑 Ordenes", "⚠️ Configuracion Y Gestion de Riesgo"])
 # ----------------------
-def graficar(dfpl,title,Tag, portafolio):
+def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     #st.write(Tag)
     dfpl.reset_index(drop=True, inplace=True)
     inc = dfpl.query("close>open")
@@ -394,7 +484,7 @@ def graficar(dfpl,title,Tag, portafolio):
             x="index", 
             y="EMACorta", 
             color="#ffb81c",
-            legend_label="EMACorta",
+            legend_label=f"EMA Corta {periodoCorto}",
             line_width=1.5,
             source=dfpl)
         p.line(
@@ -402,7 +492,7 @@ def graficar(dfpl,title,Tag, portafolio):
             y="EMALarga", 
             color="red",
             line_width=1.5,
-            legend_label="EMALarga",
+            legend_label=f"EMA Larga {periodoLargo}",
             source=dfpl)
     else:
         p.line(
@@ -410,52 +500,83 @@ def graficar(dfpl,title,Tag, portafolio):
             y="EMACorta2", 
             color="#ffb81c",
             line_width=1.5,
-            legend_label="EMACorta 2",
+            legend_label=f"EMA Corta {periodoCorto}",
             source=dfpl)
         p.line(
             x="index", 
             y="EMALarga2", 
             color="red",
             line_width=1.5,
-            legend_label="EMALarga 2",
+            legend_label=f"EMA Larga {periodoLargo}",
             source=dfpl)
     
-    # if Tag=="long":    
-    #     if (dfpl[dfpl["isBreakOutFinal"]==1].shape[0]>0):
-    #         i2 = dfpl[dfpl["isBreakOutIni"]==1].index[0]
-    #         fin2 = dfpl[dfpl["isBreakOutFinal"]==1].index[0]
-    #         print("i2:", i2)
-    #         print("i_fin2:", fin2)
-    #     else:
-    #         i2 = dfpl[dfpl["isBreakOutIni"]==1].index[0]
-    #         fin2 = dfpl.index[-1]
-    #         print("i2:",i2)
-    #         print("i_fin2:", fin2)
-    #     p.line(
-    #     x="index", 
-    #     y="trailing_stop", 
-    #     color="black",
-    #     legend_label="trailing_stop",
-    #     source=dfpl[i2:fin2])
-    # else:
-    #     if (dfpl[dfpl["isBreakOutFinal2"]==-1].shape[0]>0):
-    #         i2 = dfpl[dfpl["isBreakOutIni2"]==-1].index[0]
-    #         fin2 = dfpl[dfpl["isBreakOutFinal2"]==-1].index[0]
-    #         print("i2:", i2)
-    #         print("i_fin2:", fin2)
-    #     else:
-    #         i2 = dfpl[dfpl["isBreakOutIni2"]==-1].index[0]
-    #         fin2 = dfpl.index[-1]
-    #         print("i2:",i2)
-    #         print("i_fin2:", fin2)
+    # if Tag=="long":
+
+    cnt_iniTrade = dfpl[dfpl["inicioTrade"]==1]
+    cnt_ts = dfpl[(np.isnan(dfpl["trailing_stop"])==False)]
+    print ("carlosss cnt_ts:", cnt_ts.shape[0])
+    cnt_ts2 = dfpl[(dfpl.trailing_stop!=None)]
+    print ("carlosss cnt_ts:", cnt_ts2.shape[0])
+
+    #print (dfpl)
+
+    if cnt_iniTrade.shape[0]>0:
+        #i2 = dfpl[dfpl["inicioTrade"]==1].index[0]
+        #fin2 = dfpl.index[-1]
+        #print("i2:",i2)
+        #print("i_fin2:", fin2)
+        p.line(
+        x="index", 
+        y="trailing_stop", 
+        color="blue",
+        line_width=1,
+        legend_label="trailing_stop",
+        source=dfpl)
+        #source=dfpl[dfpl["trailing_stop"]!=None])
+
+        ts_now = (dfpl[["trailing_stop"]][(np.isnan(dfpl["trailing_stop"])==False)]).iloc[-1]["trailing_stop"]
+        print("ts_now:", ts_now)        
+        hTS=Span(location=ts_now,dimension='width', line_color='blue',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
+        
+        labeltS = Label(x=0,           # posición X (puedes ajustar según necesites)
+              y=ts_now,                # posición Y = ubicación de la línea
+              x_units='screen',        # relativo al ancho del gráfico
+              y_units='data',          # relativo a los datos (eje Y)
+              text=f"TS {ts_now}", # texto a mostrar
+              text_font_size="9pt",
+              text_color="blue",
+              background_fill_color="#efefef",
+              background_fill_alpha=0.7)
+        
+        p.renderers.extend([hTS])
+        p.add_layout(labeltS)
+
+        inicio = (dfpl[(dfpl.inicioTrade==1)].index).tolist()[0]
+        vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
+
+        labelInicio = Label(x=inicio,           # posición X (puedes ajustar según necesites)
+              y=dfpl['low'].min(),                # posición Y = ubicación de la línea            
+              text=f"Ini. Trade", # texto a mostrar
+              text_font_size="9pt",
+              text_color="grey",
+              text_align="center",
+              background_fill_color="#efefef",
+              background_fill_alpha=0.7)
+        p.renderers.extend([vline])
+        p.add_layout(labelInicio)
+    
+    # else:        
+    #     i2 = dfpl[dfpl["inicioTrade"]==1].index[0]
+    #     fin2 = dfpl.index[-1]
+    #     print("i2:",i2)
+    #     print("i_fin2:", fin2)
     
     #     p.line(
-    #     x="index", 
-    #     y="trailing_stop2", 
+    #     x="index",
+    #     y="trailing_stop2",
     #     color="black",
     #     legend_label="trailing_stop 2",
     #     source=dfpl[i2:fin2])
-    
     
     #codigo para dibujar pivots
     p.scatter(x="index", y="pivotLow", marker="circle", size=6,
@@ -465,17 +586,7 @@ def graficar(dfpl,title,Tag, portafolio):
     
   
 
-    inicio = (dfpl[(dfpl.inicioTrade==1)].index).tolist()[0]
-    vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
-
-    labelInicio = Label(x=inicio,           # posición X (puedes ajustar según necesites)
-              y=dfpl['low'].min(),                # posición Y = ubicación de la línea            
-              text=f"Ini. Trade", # texto a mostrar
-              text_font_size="9pt",
-              text_color="grey",
-              text_align="center",
-              background_fill_color="#efefef",
-              background_fill_alpha=0.7)
+    
     
     #print("FECHA DATE:",type(dfpl["date"]))
     #print("FECHA DATE2:",type(dfpl["Datetime_str"]))
@@ -508,58 +619,18 @@ def graficar(dfpl,title,Tag, portafolio):
               text_color="grey",
               background_fill_color="#efefef",
               background_fill_alpha=0.7)
-
-    
-    # if Tag=="long":
-    #     entradas=dfpl[dfpl["isBreakOutIni"]==1]
-    #     p.triangle(
-    #         x=entradas.index,
-    #         y=entradas["Low"] - 0.07,  # un poco debajo del mínimo
-    #         size=12,
-    #         color="#184e77",
-    #         legend_label="Entrada",
-    #         alpha=0.8
-    #     )
-    #     salidas=dfpl[dfpl["isBreakOutFinal"]==1]
-    #     p.inverted_triangle(
-    #         x=salidas.index,
-    #         y=salidas["High"] + 0.07,  # un poco encima del máximo
-    #         size=12,
-    #         color="#3a0ca3",
-    #         legend_label="Salida",
-    #         alpha=0.8
-    #     )
-    # elif Tag=="short":
-    #     entradas=dfpl[dfpl["isBreakOutIni2"]==-1]
-    #     p.inverted_triangle(
-    #         x=entradas.index,
-    #         y=entradas["High"] - 0.07,  # un poco debajo del mínimo
-    #         size=12,
-    #         color="#ff1808",
-    #         legend_label="Entrada",
-    #         alpha=0.8
-    #     )
-    #     salidas=dfpl[dfpl["isBreakOutFinal2"]==-1]
-    #     p.triangle(
-    #         x=salidas.index,
-    #         y=salidas["Low"] + 0.07,  # un poco encima del máximo
-    #         size=12,
-    #         color="#ff1100",
-    #         legend_label="Salida",
-    #         alpha=0.8
-    #     )
+       
     p.yaxis[0].formatter = NumeralTickFormatter(format="$0.00")
     #p.xaxis.axis_label = "Fecha"
     p.yaxis.axis_label = "Precio"
     p.legend.location="top_left"
     p.legend.click_policy="hide"
-    p.renderers.extend([vline])
+    
     p.renderers.extend([hStrike])
     p.add_layout(labelStrike)
     p.renderers.extend([hPriceNow])
     p.add_layout(labelPriceNow)
-    p.add_layout(labelInicio)
-    
+       
 
     p.add_tools(CrosshairTool(line_width=0.4, line_alpha=0.7))
     #p.add_tools(CrosshairTool([width,height]))
@@ -600,41 +671,12 @@ def graficar(dfpl,title,Tag, portafolio):
 print("===TRADES FRONT ===")
 print(trades_data)
 
-for indice, pos in enumerate(portfolio_data):
-    id = pos["conId"]
-    print("===REVISION DE FECHAS===")
-    print("id:", id)
-    count=0
-    for indice2, trade in enumerate(items):
-        id2 = trade["conid"]
-        if id==id2:            
-            count=count+1
-            print("entro flex:", count)
-            portfolio_data[indice]["dateTime"] =  pd.to_datetime(trade["dateTime"], format="%d/%m/%Y;%H:%M:%S")
-    
-    if count==0:
-        for indice3, trade3 in enumerate(trades_data):
-            id3=trade3["conId"]
-            if id==id3:
-                count=count+1
-                print("entro trade:", count)
-                #La infomacion esta en en zona horaria UTC, la convertiremos a zona horaria New York                
-                ts=pd.to_datetime(trade3["dateTime"])
-                ny_time = ts.tz_convert('America/New_York')
-                # Quitar la zona horaria
-                ny_naive = ny_time.tz_localize(None)
-                portfolio_data[indice]["dateTime"] = ny_naive
-            
 #print("======= PORTAFOLIO After=============")
 #print(portfolio_data)
-
-
 #print ("positions_data")
 #print(positions_data)
-
 #print ("ordens_data")
 #print(ordens_data)
-
 
 #revisar cantidades
 print("======CANTIDADES=========")
@@ -669,8 +711,6 @@ with tab1:
             gb.configure_pagination(enabled=True, paginationPageSize=5)
             gb.configure_grid_options(domLayout="normal")
     
-
-
             grid_options = gb.build()
             df_display = portfolio_df.copy()
 
@@ -688,7 +728,8 @@ with tab1:
             # ========================
             # Detectar fila seleccionada
             # ========================
-            print ("hito1")
+            
+            col11, col21, col31, col41 = st.columns([1, 1, 1, 1])
             selected = grid_response.get("selected_rows", [])
             # Asegurarnos que selected sea lista o DataFrame
             if selected is not None and len(selected) > 0:
@@ -696,21 +737,50 @@ with tab1:
                     ticker = selected.iloc[0]["Financial Instrument"]   # si es DataFrame
                     symbol = selected.iloc[0]["Symbol"]
                     conId = selected.iloc[0]["conId"]
+                    inicio_ts = selected.iloc[0]["inicio_ts"]
                 #else:
                 #    ticker = selected.iloc[0]["Financial Instrument"]        # si es lista de dicts
                 
-                #st.success(f"Seleccionaste {ticker}")
 
-                if st.button(f"❌ Cerrar {ticker}"):
-                    #st.session_state.positions = st.session_state.positions[
-                    #    st.session_state.positions["Ticker"] != ticker
-                    #]
-                    #st.experimental_rerun()
-                    try:
-                        requests.post(f"{API_BASE}/close_position/{conId}")
-                        st.success(f"Cerro el trade {ticker}")
-                    except Exception as e:
-                        st.warning(f"Error cerrando posición: {e}")
+                with col11:
+                    if st.button(f"❌ Cerrar {ticker}"):
+                        try:
+                            requests.post(f"{API_BASE}/close_position/{conId}")
+                            st.success(f"Cerro el trade {ticker}")
+                        except Exception as e:
+                            st.warning(f"Error cerrando posición: {e}")
+
+                with col21:
+                    st.write("Ini. T. Stop:")
+                
+                with col31:
+                    #Caja de Texto
+                    new_value = st.number_input("", min_value=-100, step=1, value=int(inicio_ts), format="%d")
+                    new_value = int(new_value)
+
+                with col41:
+                    # Botón para actualizar
+                    if st.button("Actualizar"):
+                        #update_value_in_dynamo(pk, new_value)
+                        key ={
+                            'conId': int(conId)
+                        }
+                        update_expression= "SET inicio_ts = :ini_ts"                        
+
+                        # Conversión segura antes de armar expression_values
+                        if hasattr(new_value, "item"):
+                            safe_value = int(new_value.item())
+                        else:
+                            safe_value = int(new_value)
+                            
+                        expression_values = {
+                            ':ini_ts': int(safe_value)
+                        }
+
+                        #print("Tipo final:", type(expression_values[":ini_ts"]), expression_values[":ini_ts"])
+                        
+                        bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
+                        st.success("actualizado correctamente ✅")
 
             print ("hito2")
             if selected is not None and len(selected) > 0:
@@ -721,17 +791,19 @@ with tab1:
 
                 try:
                     print ("hito3")
-                    datamkt=fetch_datamkt(symbol)                    
-                    print(datamkt)
+                    alldatamark = fetch_alldatamkt()
+                    df_alldatamark = pd.DataFrame(alldatamark)
+                    ##datamkt=fetch_datamkt(symbol)                    
                     print ("hito4")
-                    df_datamkt = pd.DataFrame(datamkt)
+                    #df_datamkt = pd.DataFrame(datamkt)
+                    df_datamkt = df_alldatamark[df_alldatamark["ticker"]==symbol] #Filtrar por un symbol
                     df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
                     print ("hito5")
                     #print("info dataframe")    
                     #print(selected.info())
                     #print(selected)
                     print("dateTime:",selected.iloc[0]["dateTime"])
-                    fechaEvaluar = pd.to_datetime(selected.iloc[0]["dateTime"])
+                    #fechaEvaluar = pd.to_datetime(selected.iloc[0]["dateTime"])
                     print ("hito55")
                     #print("fechaEvaluar:", fechaEvaluar)
                     #print("tipo fechaEvaluar:", type(fechaEvaluar))
@@ -747,7 +819,7 @@ with tab1:
                     #print("df_datamkt")
 
                     #df_datamkt["inicioTrade"] = np.where(df_datamkt[(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"))], 1, 0)
-                    df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
+                    #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
 
                     print ("hito6")
                     df_datamkt["Datetime_str"] = df_datamkt["date"].astype(str)
@@ -758,51 +830,26 @@ with tab1:
                     else:
                         tag="short"
 
-                    print ("hito7")
+                    filtro = df_variable.query("Ticker==@symbol and Tag==@tag")
 
-                    #EMAS
-                    filtro = df_variable.query("Ticker==@ticker and Tag==@tag")
                     if filtro.shape[0]>0:
                         periodoCorto = filtro.iloc[0]["periodoCorto"]
                         periodoLargo = filtro.iloc[0]["periodoLargo"]
                     else:
                         periodoCorto = 20
                         periodoLargo = 40
+                    print ("hito7")
 
-                    print ("hito8")
-                    #company = df_datamkt.query("companyName==@ticker").copy()
-                    df_datamkt.sort_values(by=['date'])
-
-                    df_datamkt['EMACorta'] = df_datamkt['low'].ewm(span=periodoCorto, adjust=False).mean()
-                    df_datamkt.dropna(inplace=False)
-                    df_datamkt['EMALarga'] = df_datamkt['low'].ewm(span=periodoLargo, adjust=False).mean()
-                    df_datamkt.dropna(inplace=False)
-
-                    df_datamkt['EMACorta2'] = df_datamkt['high'].ewm(span=periodoCorto, adjust=False).mean()
-                    df_datamkt.dropna(inplace=False)
-                    df_datamkt['EMALarga2'] = df_datamkt['high'].ewm(span=periodoLargo, adjust=False).mean()
-                    df_datamkt.dropna(inplace=False)
-                    # fin EMAS
-
-                    print("datos df_datamkt-->")
-                    print(df_datamkt)
-
-                    #PIVOTS
-                    orders = [20,10,7]
-                    for ord in orders:
-                        max_idx = argrelextrema(df_datamkt['high'].values, np.greater, order=ord)[0]
-                        min_idx = argrelextrema(df_datamkt['low'].values, np.less, order=ord)[0]
-                        # Aplicar el cálculo solo a los índices en la lista
-                        df_datamkt.loc[df_datamkt.index[max_idx], 'pivotHigh'] = df_datamkt['high']+1e-3
-                        df_datamkt.loc[df_datamkt.index[min_idx], 'pivotLow'] = df_datamkt['low']-(1e-3)
-                        df_datamkt.loc[df_datamkt.index[max_idx], 'isPivot'] = 1
-                        df_datamkt.loc[df_datamkt.index[min_idx], 'isPivot'] = 2
+                    #print("datos df_datamkt-->")
+                    #print(df_datamkt)
 
                     #print(df_datamkt.info())
                     hoy = datetime.today().date()
-                    hace_5_dias = pd.to_datetime(hoy - timedelta(days=7))
+                    print ("hito8")
+                    hace_5_dias = pd.to_datetime(hoy - timedelta(days=8))
                     df_datamkt2 = df_datamkt[df_datamkt["date"]>=hace_5_dias].copy()
-                    graficar(df_datamkt2,"",tag, selected)
+                    print ("hito9")
+                    graficar(df_datamkt2,"",tag, selected, periodoCorto, periodoLargo)
 
                 except Exception as e:
                     st.warning(f"Error datos del mercado: {e}")
@@ -825,109 +872,6 @@ with tab1:
         st.info("No hay Posiciones Abiertas.")
     
 
-# with tab1:
-#     st.subheader("📊 Posiciones Abiertas")
-#     if portfolio_data:
-#         #portfolio_df = pd.DataFrame(portfolio_data)
-#         portfolio_df = pd.DataFrame(portfolio_data)
-#         df_trades = pd.DataFrame(trades_data)
-
-#         #styled_df = portfolio_df.style.applymap(color_cel, subset=["Total PnL", "% PnL"])
-#         #st.dataframe(styled_df, use_container_width=True)
-
-#         colms = st.columns((1,1,2,1,1,1,1,1,1,1,1), border=True, vertical_alignment="center")
-#         fields = ['ID','Symbol','Financial Instrument','Position','Cost basis','Market Value','Unrealized PnL','Realized PnL','Total PnL','% PnL', "Action"]
-#         for col, field_name in zip(colms, fields):
-#             # header
-#             col.write(field_name)
-
-#         # Filas
-#         for i,row in portfolio_df.iterrows():
-#             cols = st.columns((1,2,1,1,1,1,1,1,1,1,1))
-#             cols[0].write(row["conId"])
-#             cols[1].write(row["Symbol"])
-#             cols[2].write(row["Financial Instrument"])
-#             cols[3].write(row["Position"])
-#             cols[4].write(row["Cost basis"])
-#             cols[5].write(row["Market Value"])
-#             cols[6].write(row["Unrealized PnL"])
-#             cols[7].write(row["Realized PnL"])
-#             #cols[8].write(row["Total PnL"])
-#             # Color condicional para PnL
-
-#             # Fondo condicional para PnL
-#             if row["Total PnL"] < 0:
-#                 bg_color = "background-color: red;"  # rojo suave
-#             elif row["Total PnL"] > 0:
-#                 bg_color = "background-color: green;"  # verde suave
-#             else:
-#                 bg_color = "background-color: lightgray;"  # gris para cero
-
-#             cols[8].markdown(
-#                 f"<div style='{bg_color} padding:5px; border-radius:5px; text-align:center;'><span style='color:white'>{row['Total PnL']}</span></div>",
-#                 unsafe_allow_html=True,
-#             )
-
-
-#             # if row["Total PnL"] < 0:
-#             #     cols[8].markdown(f"<span style='color:red'>{row['Total PnL']}</span>", unsafe_allow_html=True)
-#             # else:
-#             #     cols[8].markdown(f"<span style='color:green'>{row['Total PnL']}</span>", unsafe_allow_html=True)
-
-#             #cols[9].write(row["% PnL"])
-
-#             # Fondo condicional para PnL
-#             if row["% PnL"] < 0:
-#                 bg_color = "background-color: red;"  # rojo suave
-#             elif row["% PnL"] > 0:
-#                 bg_color = "background-color: green;"  # verde suave
-#             else:
-#                 bg_color = "background-color: lightgray;"  # gris para cero
-
-#             cols[9].markdown(
-#                 f"<div style='{bg_color} padding:5px; border-radius:5px; text-align:center;'><span style='color:white'>{row['% PnL']} %</span></div>",
-#                 unsafe_allow_html=True,
-#             )  
-            
-#             if cols[10].button(f"Cerrar", key=row["conId"]):
-#                 try:
-#                     requests.post(f"{API_BASE}/close_position/{row['Symbol']}")
-#                 except Exception as e:
-#                     st.warning(f"Error cerrando posición: {e}")
-
-       
-#         unrealized_pnl = portfolio_df["Unrealized PnL"].sum()
-        
-#         if  (df_trades.shape[0]>0):
-#             realized_pnl = portfolio_df["Realized PnL"].sum() + df_trades["Rlzd P&L"].sum()
-#         else:
-#             realized_pnl = portfolio_df["Realized PnL"].sum()
-
-
-#         total_pnl = unrealized_pnl + realized_pnl
-
-#         col1, col2, col3 = st.columns(3)
-#         col1.metric("Unrealized PnL", f"${unrealized_pnl:.2f}", portfolio_df["% PnL"].sum(), border=True )
-#         col2.metric("Realized PnL", f"${realized_pnl:.2f}", portfolio_df["% PnL"].sum(), border=True)
-#         col3.metric("PnL Total", f"${total_pnl:.2f}", portfolio_df["% PnL"].sum(), border=True)
-#         # Ejemplo de riesgo: pérdida diaria máxima $500
-#         if total_pnl < -500:
-#             st.error("⚠️ Límite de pérdida diaria alcanzado (-500 USD). Considera cerrar posiciones.")
-
-#         #Botones de cierre por fila
-#         #for idx, row in portfolio_df.iterrows():
-#         #    if st.button(f"Cerrar {row['Symbol']}"):
-#         #        try:
-#         #            requests.post(f"{API_BASE}/close_position/{row['Symbol']}")
-#         #        except Exception as e:
-#         #            st.warning(f"Error cerrando posición: {e}")
-
-#         # Gráfico P&L
-#         fig = px.bar(portfolio_df, x='Symbol', y='% PnL', color='% PnL', title='%P&L por instrumento')
-#         st.plotly_chart(fig)
-
-#     else:
-#         st.info("No hay data Portafolio")
 
 # ----------------------
 # Trades históricos
@@ -994,11 +938,11 @@ def cargar_estrategias():
 
 with tab4:
     # URL PRODUCCION
-    url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
+    #url_trades="/home/ubuntu/script/data/backtesting/estadisticas_cba.txt"
     # URL LINDER
     #url_trades = "D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
     #URL CARLOS
-    # url_trades="D:/data/backtesting/estadisticas_cba.txt"
+    url_trades="D:/data/backtesting/estadisticas_cba.txt"
 
     ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
 

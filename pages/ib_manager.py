@@ -16,32 +16,15 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
+import streamlit as st
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from bot import script_crud as bd
 
-path_file = "D:/TraderEstrategias" #DESARROLLO
-#path_file = "/home/ubuntu/script" #PRODUCCION
-#Carga de Variables
-#Leer el archivo de Variables
-ruta_archivo=f'{path_file}/data/strategy.txt'
-if os.path.exists(ruta_archivo):
-    # Cargar el archivo
-    df_variable = pd.read_csv(ruta_archivo, sep='\t')
-    print("Archivo cargado correctamente.")
-else:
-    # Crear un DataFrame vacío
-    df_variable = pd.DataFrame()
-    print("Archivo no existe. Se creó un DataFrame vacío.")
 
-# Ruta donde se guardará la configuración
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
-ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
-CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
-CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
-market_data_cache = {}   # diccionario global, cache en memoria
 
-user="carlosml0287" #CAMBIAR DE SER NECESARIO
-
+#------------------------
+# funciones
+#------------------------
 def cargar_usuario():
     """Carga parametros de Usuario"""
     if os.path.exists(CONFIG_FILE):
@@ -56,55 +39,90 @@ def cargar_config():
             return json.load(f)
     return None
 
-usuarios = cargar_usuario()
+
+#--------------------------
+# Variables para rutas
+#--------------------------
+#path_file="/mnt/efs" #produccion
+path_file = "D:/TraderEstrategias" #desarrollo carlos
+#Usuarios
+user="carlosml0287"
+# user="investyolanda1"
+# user="Ventanilla39"
+# param_cuenta=int(sys.argv[1]) #0-PAPER 1-live
+param_cuenta=int(os.getenv("PARAM_CUENTA", "0"))  # por defecto 0 = PAPER
+CONFIG_FILE = f"{path_file}/config_gestion_riesgo/param.json"
+
+
+usuarios=cargar_usuario()
+user_data=usuarios[user]
+
+if param_cuenta==0:
+    print("CUENTA PAPER")
+    id_file=user_data.get("account_idpaper")
+    tipo_cuenta="PAPER"
+elif param_cuenta==1:
+    print("CUENA LIVE")
+    id_file=user_data.get("account_idlive")
+    tipo_cuenta="LIVE"
+else:
+    print("Error: el parametro ingresado es errado.")
+    sys.exit(1)  # Termina el programa con un código de error 1
+print("id_file es: ",id_file)
+CONFIG_FILE2 = f"{path_file}/config_gestion_riesgo/config_{id_file}/config_riesgo.json"
+
+market_data_cache = {}   # diccionario global, cache en memoria
+
+ruta_archivo=f'{path_file}/data/strategy.txt'
+if os.path.exists(ruta_archivo):
+    # Cargar el archivo
+    df_variable = pd.read_csv(ruta_archivo, sep='\t')
+    print("Archivo cargado correctamente.")
+else:
+    # Crear un DataFrame vacío
+    df_variable = pd.DataFrame()
+    print("Archivo no existe. Se creó un DataFrame vacío.")
+
 config = cargar_config()
 
-ip=""
-port = 0
-clientId = 9999
-tipo_cuenta = config.get("tipo_cuenta")
+#cargamos los valores segun el tipo de cuenta 
+if tipo_cuenta=="PAPER":
+    print("Valores de paper")
+    ip=user_data.get("ip_paper")
+    port=user_data.get("port_paper")
+    clientId=user_data.get("clientid_Dash_paper")
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_paper")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_paper")
+elif tipo_cuenta=="LIVE":
+    print("valores de live")
+    ip=user_data.get("ip_live")
+    port=user_data.get("port_live")
+    clientId=user_data.get("clientid_Dash_live")
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_live")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_live")
+
+
+else:
+    print("Usuario con tipo de cuenta no encontrado")
+    sys.exit(1)  # Termina el programa con un código de error 1
+
 inicio_ts = Decimal(config.get("inicio_ts"))
-acceskey=""
-secretaccess=""
+acceskey=user_data.get("aws_access_key_id")
+secretaccess=user_data.get("aws_secret_access_key")
+table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
 # Tiempo mínimo entre lecturas reales de DynamoDB
 REFRESH_INTERVAL = 900  # segundos, 15minutos
 
-if user in usuarios:
-    valores = usuarios[user]
-    #print(f"Datos de {user}:")
-    for clave, valor in valores.items():        
-        if tipo_cuenta=="PAPER":
-            if clave=="ip_paper":
-                ip=valor
-            if clave=="port_paper":
-                port=valor
-            if clave=="clientid_Dashpaper":
-                clientId=valor
-            if clave=="table_IBKR_Trades_paper":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_paper":
-                table_IBKR_Account=valor
-            table_posiciones_abiertas="posiciones_abiertas_paper"
-        elif tipo_cuenta=="LIVE":
-            if clave=="ip_live":
-                ip=valor
-            if clave=="port_live":
-                port=valor
-            if clave=="clientid_Dash":
-                clientId=valor
-            if clave=="table_IBKR_Trades_live":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_live":
-                table_IBKR_Account=valor
-            table_posiciones_abiertas="posiciones_abiertas"
-        if clave=="aws_access_key_id":
-            acceskey=valor
-        if clave=="aws_secret_access_key":
-            secretaccess=valor
-
-        #print(f"{clave}: {valor}")
-else:
-    print("Usuario no encontrado")
+print("Valores")
+print("ip: ",ip)
+print("port: ",port)
+print("clientId: ",clientId)
+print("table_IBKR_Trades: ",table_IBKR_Trades)
+print("table_IBKR_Account: ",table_IBKR_Account)
+print("tipocuenta: ",tipo_cuenta)
+print("acceskey: ",acceskey)
+print("secretaccess: ",secretaccess)
+print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 
 #BASE DE DATOS DYNAMODB
@@ -323,7 +341,7 @@ async def get_portfolio():
         count=0
         dateTime = None
         for indice2, trade in enumerate(items):
-            id2 = trade["conid"]
+            id2 = trade["conId"]
             if id==id2:
                 count=count+1
                 print("entro flex:", count)
@@ -345,7 +363,7 @@ async def get_portfolio():
 
         trades_dynamo = await get_posiciones_abiertas(id)
         if len(trades_dynamo)>0:
-                    inicio_ts=trades_dynamo[0]["inicio_ts"]
+            inicio_ts=trades_dynamo[0]["inicio_ts"]
 
         data2.append({
             "conId": id,
@@ -588,7 +606,7 @@ async def get_data_all():
                 "fecha_cierre": None
             })
         
-
+    print("hito get_data_all 1")
     for ticker in tickers:
         print("TICKER:", ticker)
         contract = Stock(ticker, 'SMART', 'USD')
@@ -657,45 +675,89 @@ async def get_data_all():
 
         #TRAILING STOP
         #Generar Trailing Stop con ATR
-        atr_mult_sl_1 = 1.2
-        atr_mult_tp = 5
+        atr_mult_sl_1 = 1
         entry_price = trailing_stop = None
       
         #pricenow = df_datamkt["close"].iloc[-1]
         df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
-        for portfolio in portfolios:
-
+        for portfolio in portfolios:            
             if (ticker==portfolio["Symbol"]):
-                cnt_cerrar=0
-                fechaEvaluar = pd.to_datetime(portfolio["dateTime"])
-                df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
-                indiceIni = df_datamkt.index[df_datamkt["inicioTrade"] == 1][0]
-                df3 = (df_datamkt.query("index>=@indiceIni")).copy()
+                df_datamkt["inicioTrade"] = 0
+                cnt_cerrar=0                
+                df3 = pd.DataFrame()
+                if portfolio["dateTime"]!=None:
+                    fechaEvaluar = pd.to_datetime(portfolio["dateTime"])
+                    print("h111 fechaEvaluar:",fechaEvaluar)
+                    print(df_datamkt["date"].dt.floor("h"))
+
+                    print("fechaEvaluar floor:", fechaEvaluar.floor("h"), type(fechaEvaluar.floor("h")))
+                    print("unique horas:", df_datamkt["date"].dt.floor("h").unique())
+
+                    #print("h22:",df_datamkt["date"].dt.tz)
+                    #print("h33:",fechaEvaluar.tzinfo)
+
+                    #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
+                    mask = df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h")
+                    df_datamkt.loc[mask, "inicioTrade"] = 1
+                    indiceIni = df_datamkt.index[df_datamkt["inicioTrade"] == 1][0]
+                    #aqui
+                    #df3 = (df_datamkt.query("index>=@indiceIni")).copy()
                 right = portfolio["right"]
                 conId = portfolio["conId"]
                 tipo_stop = 1 #STOP LOSS ESTATICO
                 por_profit = portfolio["% PnL"]                
                 trailing_stop = None  # inicial
-                df_datamkt['trailing_stop'] = None
-               
-                if por_profit>=inicio_ts: #ACTIVAR Trailing Stop
+                df_datamkt['trailing_stop'] = None               
+                
+                #print("hito111 Carlos")
+                #print (df_datamkt.info())                
+                
+                #===Obtener el inicio de Trailing Stop
+                fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
+                initstop=st.session_state.get(f"initstop_{conId}")
+                print("h1 fechainitstop:", fechainitstop)
+                if fechainitstop == None:
                     trades_dynamo = await get_posiciones_abiertas(conId)
                     if len(trades_dynamo)>0:
-                        for item in trades_dynamo:
-                            # Obtener la PK del item
-                            key ={
-                                'conId': int(item['conId'])
-                            }
-                            update_expression= "SET fecha_inicio_ts = :new_fec"
+                        fechainitstop=trades_dynamo[0]["fecha_inicio_ts"]
+                        initstop=trades_dynamo[0]["inicio_ts"]
+                        print("h2 fechainitstop:", fechainitstop)
+                        if fechainitstop!=None:
+                            st.session_state[f"fechainitstop_{conId}"] = fechainitstop
 
-                            expression_values={
-                                ':new_fec': now_ny_str
-                            }
-                            bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
+                        if initstop!=None:
+                            st.session_state[f"initstop_{conId}"] = initstop
 
-                    
-                #if por_profit>=0: #ACTIVAR Trailing Stop
+                        if fechainitstop == None:
+                            print("h3 initstop:")
+                            if por_profit>=initstop: #ACTIVAR Trailing Stop
+                                if len(trades_dynamo)>0:                     
+                                    for item in trades_dynamo:
+                                        # Obtener la PK del item
+                                        key ={
+                                            'conId': int(item['conId'])
+                                        }
+                                        update_expression= "SET fecha_inicio_ts = :new_fec"
+
+                                        expression_values={
+                                            ':new_fec': now_ny_str
+                                        }
+                                        bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
+                                    st.session_state[f"initstop_{conId}"] = now_ny_str
+                
+                #===Volver a consultar el inicio del trailing stop
+                fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
+                print ("fechainitstop:", fechainitstop, "tipo:",type(fechainitstop))
+                #ACTIVAR Trailing Stop
+                if fechainitstop!=None:                   
                     #Obtener Salida utilizando Trailing Stop ATR
+                    fechaEvaluar = pd.to_datetime(fechainitstop, format="%d-%m-%Y %H:%M:%S")
+                    #print("fechaEvaluar1:", fechaEvaluar)
+                    #print("fechaEvaluar:",fechaEvaluar.floor("h"))
+                    #print(df_datamkt["date"].dt.floor("h"))
+                    df3 = df_datamkt[df_datamkt["date"].dt.floor("h") >= fechaEvaluar.floor("h")].copy()
+                    #print ("=========df3==========")
+                    #print(df3)
                     for k, row3 in df3.iterrows():
                         price = df_datamkt.loc[k, 'close']
                         atr = df_datamkt.loc[k, 'ATR']
@@ -718,8 +780,7 @@ async def get_data_all():
                                 trailing_stop = min(trailing_stop, new_stop)
                             # Salida de la operación (short example)
                             if price >= trailing_stop:
-                                cnt_cerrar = cnt_cerrar + 1
-                            
+                                cnt_cerrar = cnt_cerrar + 1                            
                             
                         #print("k:",k,",trailing_stop:", trailing_stop)
                         df_datamkt.loc[k, 'trailing_stop'] = trailing_stop
@@ -728,18 +789,18 @@ async def get_data_all():
                 if cnt_cerrar>0:
                     print("❌ Stop alcanzado, cerrando posición")
                     try:
-                        #mensaje_cierre= await close_position(conId)
-                        #print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
-                        print(f"Debe cerrar:{ticker} - {conId}")
+                        mensaje_cierre= await close_position(conId)
+                        print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
+                        #print(f"Debe cerrar:{ticker} - {conId}")
                     except (ValueError, TypeError) as e:
                         print("Error:", e)
                 
-
+        print("hito get_data_all 2")
         #     elif right=="P":
         df_datamkt["date"] = df_datamkt["date"].dt.strftime("%Y-%m-%dT%H:%M:%S") #volver a cambiar tipo de dato por el JSON
         print("df_datamkt:", df_datamkt.shape[0])
 
-        print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop"]].tail(40))
+        print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]])
 
         if df_total.shape[0]<=0:
             df_total = df_datamkt
@@ -747,9 +808,10 @@ async def get_data_all():
             df_total = pd.concat([df_total,df_datamkt], ignore_index=True)
 
         df_total = df_total.replace([np.inf, -np.inf], np.nan)
-        df_total = df_total.where(pd.notnull(df_total), None)
-        data = df_total.astype(object).where(pd.notnull(df_total), None).to_dict(orient="records")
+        df_total = df_total.where(pd.notnull(df_total), None)        
     #return df_total.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo
+    data = df_total.astype(object).where(pd.notnull(df_total), None).to_dict(orient="records")
+    print("hito get_data_all 2222")
     return JSONResponse(content=data)
 
 

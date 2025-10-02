@@ -6,14 +6,20 @@ from datetime import datetime
 from decimal import Decimal
 import os
 import json
+import sys
 
-# Ruta donde se guardará la configuración
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (bot)
-ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
-CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
-CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
+#Parametros a recibir
+user = str(sys.argv[1])
+param_cuenta=int(sys.argv[2]) #0 paper 1 live
+#user="carlosml0287" #configurar
 
-user="carlosml0287" #configurar
+#variables globales
+path_folder="/mnt/efs" #Produccion
+#path_folder="/bot_aws" #Desarrollo Linder
+#path_folder="/traderxpro" #Desarrollo Carlos
+
+#PRODUCCION
+CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
 
 def cargar_usuario():
     """Carga parametros de Usuario"""
@@ -31,70 +37,72 @@ def cargar_config():
 
 
 usuarios = cargar_usuario()
+if usuarios is None:
+    print("Error: No se pudo cargar el archivo de configuración.")
+    sys.exit(1)  # Termina el programa con un código de error 1
+
+if user not in usuarios:
+    print(f"Error: El usuario '{user}' no se encontró en el archivo de configuración.")
+    sys.exit(1)  # Termina el programa con un código de error 1
+
+user_data = usuarios[user]
+
+#verificamos que cuenta es
+if param_cuenta==0:
+    tipo_cuenta="PAPER"
+    id_cuenta=user_data.get("account_idpaper")
+    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} PAPER")
+elif param_cuenta==1:
+    tipo_cuenta="LIVE"
+    id_cuenta=user_data.get("account_idlive")
+    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} LIVE")
+
+CONFIG_FILE2 = f"{path_folder}/config_gestion_riesgo/config_{id_cuenta}/config_riesgo.json"
+
 config = cargar_config()
 
-tipo_cuenta = config.get("tipo_cuenta")
 
-token=""
-queryid =""
-table_IBKR_Trades=""
-table_IBKR_Account=""
-acceskey=""
-secretaccess=""
+#--------------------------
+# ASIGNACION DE VARIABLES
+#----------------------------
+if tipo_cuenta=="PAPER":
+    print("El tipo de cuenta es paper")
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_paper")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_paper")
+    TOKEN=user_data.get("token_flexquery_paper")
+    QUERY_ID=user_data.get("id_flexquery_paper")
+else: 
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_live")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_live")
+    print("EL TIPO DE CUENTA ES LIVE")
+    TOKEN=user_data.get("token_flexquery_live")
+    QUERY_ID=user_data.get("id_flexquery_live")
+acceskey=user_data.get("aws_access_key_id")
+secretaccess=user_data.get("aws_secret_access_key")
 
-if user in usuarios:
-    valores = usuarios[user]
-    print(f"Datos de {user}:")
-    for clave, valor in valores.items():
-        if tipo_cuenta=="PAPER":
-            if clave=="table_IBKR_Trades_paper":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_paper":
-                table_IBKR_Account=valor           
-        elif tipo_cuenta=="LIVE":
-            if clave=="table_IBKR_Trades_live":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_live":
-                table_IBKR_Account=valor
-        if clave=="aws_access_key_id":
-            acceskey=valor
-        if clave=="aws_secret_access_key":
-            secretaccess=valor
-        if clave=="token_flexquery":
-            token=valor
-        if clave=="id_flexquery":
-            queryid=valor
+print(f"table_IBKR_Trades: {table_IBKR_Trades}")
+print(f"table_IBKR_Account: {table_IBKR_Account}")
+print(f"AWS Access Key: {acceskey}")
+print(f"AWS Secret Access Key: {secretaccess}")
+print(f"Token FlexQuery: {TOKEN}")
+print(f"Query ID: {QUERY_ID}")
 
-# === Configuración Flex Query ===
-#TOKEN = "747110534787996057748287"
-#QUERY_ID = "1286419"
-#QUERY_ID = "1287673"
+table_name = table_IBKR_Trades
+table_nameAccount = table_IBKR_Account
 
-print("token:",token)
-print("queryid:",queryid)
-print("table_IBKR_Trades:",table_IBKR_Trades)
-print("table_IBKR_Account:",table_IBKR_Account)
-print("acceskey:",acceskey)
-print("secretaccess:",secretaccess)
-
-TOKEN = token
-QUERY_ID=queryid
 
 # === DynamoDB produccion===
 #dynamodb = boto3.resource("dynamodb-admin", region_name="us-east-1")
 
-#table_name = "IBKR_Trades"
-#table_nameAccount = "IBKR_Account"
 
-table_name = table_IBKR_Trades
-table_nameAccount = table_IBKR_Account
 # ====== CONFIG DYNAMODB LOCAL ======
 dynamodb = boto3.resource(
     "dynamodb",
-    region_name="us-west-2",  # región dummy para local
-    endpoint_url="http://localhost:8000",  # URL DynamoDB local
+    #region_name="us-west-2",  # región dummy para local
+    #endpoint_url="http://localhost:8000",  # URL DynamoDB local
+    region_name="us-east-2",  # región produccion
     aws_access_key_id=acceskey,
-    aws_secret_access_key=valor
+    aws_secret_access_key=secretaccess
 )
 
 # Crear tabla si no existe
@@ -102,8 +110,8 @@ def create_table():
     try:
         table = dynamodb.create_table(
             TableName=table_name,
-            KeySchema=[{"AttributeName": "trade_id", "KeyType": "HASH"}],  # PK
-            AttributeDefinitions=[{"AttributeName": "trade_id", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "tradeID", "KeyType": "HASH"}],  # PK
+            AttributeDefinitions=[{"AttributeName": "tradeID", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
         table.wait_until_exists()
@@ -190,10 +198,14 @@ def fetch_trades():
 
     results = []
     for t in trades:
-        trade_id = f"{t.get('@tradeDate')}_{t.get('@symbol')}_{t.get('@tradeID')}"
+        #trade_id = f"{t.get('@tradeDate')}_{t.get('@symbol')}_{t.get('@conid')}"
+        trade_id = f"{t.get('@buySell')}_{t.get('@symbol')}_{t.get('@conid')}"
         #Profit = Proceeds - Cost Basis - IB Commission
         profit_cal = Decimal(t.get("@proceeds")) - Decimal(t.get("@cost")) - Decimal(t.get("@ibCommission"))
         #print(trade_id)
+        strike = t.get("@strike")
+        if strike == "":
+            strike=0
         results.append({
             "trade_id": trade_id,
             "tradeID":t.get("@tradeID"),
@@ -205,7 +217,7 @@ def fetch_trades():
             "dateTime":t.get("@dateTime"),        
             "cost":Decimal(t.get("@cost")),
             "closePrice":Decimal(t.get("@closePrice")),
-            "strike":Decimal(t.get("@strike")),
+            "strike":Decimal(strike),
             "exchange":t.get("@exchange"),
             "orderType":t.get("@orderType"), 
             "quantity": int(t.get("@quantity")),
@@ -219,7 +231,7 @@ def fetch_trades():
             "netCash":Decimal(t.get("@netCash")),
             "ibCommission":Decimal(t.get("@ibCommission")),
             "profit_cal":profit_cal,
-            "conid": int(t.get("@conid"))
+            "conId": int(t.get("@conid"))
 
         })
     return results

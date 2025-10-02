@@ -23,16 +23,10 @@ from scipy.signal import argrelextrema
 from zoneinfo import ZoneInfo
 import json
 import csv
-
-# Ruta donde se guardará la configuración
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (bot)
-ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
-CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
-CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
-CONFIG_FILE3 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
-
-user="carlosml0287" #configurar
-
+import sys
+#------------------------
+# funciones
+#------------------------
 def cargar_usuario():
     """Carga parametros de Usuario"""
     if os.path.exists(CONFIG_FILE):
@@ -47,49 +41,68 @@ def cargar_config():
             return json.load(f)
     return None
 
-# def cargar_casos():
-#     """Carga ticket con mayor sharper ratio or win rate"""
-#     with open(CONFIG_FILE3, newline="", encoding="utf-8") as f:
-#         reader = pd.read_csv(f)
-#         #Convertir cada fila en una lista
-#         casos = list(reader)
-#     return casos
+#--------------------------
+# Variables
+#--------------------------
+#path_folder="/mnt/efs" #produccion
+# path_folder="/bot_aws" #Desarrollo
+path_folder= "D:/TraderEstrategias" #Desarrollo carlos
+user="carlosml0287"
+# user="investyolanda1"
+# user="Ventanilla39"
+param_cuenta=int(sys.argv[1]) #0 paper 1 live
+
+CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
 
 usuarios = cargar_usuario()
+user_data=usuarios[user]
+
+
+if param_cuenta==0:
+    print("CUENTA PAPER")
+    id_file=user_data.get("account_idpaper")
+    tipo_cuenta="PAPER"
+elif param_cuenta==1:
+    print("CUENA LIVE")
+    id_file=user_data.get("account_idlive")
+    tipo_cuenta="LIVE"
+else:
+    print("Error: el parametro ingresado es errado.")
+    sys.exit(1)  # Termina el programa con un código de error 1
+print("id_file es: ",id_file)
+
+CONFIG_FILE2 = f"{path_folder}/config_gestion_riesgo/config_{id_file}/config_riesgo.json"
+CONFIG_FILE2 = f"{path_folder}/config_gestion_riesgo/config_{id_file}/config_riesgo.json"
+CONFIG_FILE3 = f"{path_folder}/config_gestion_riesgo/config_{id_file}/estrategias_seleccionadas.csv"
+
 config = cargar_config()
 #casos = cargar_casos()
 
-ip=""
-port = 0
-clientId = 9999
-tipo_cuenta = config.get("tipo_cuenta")
-table_posiciones_abiertas=""
+#cargamos los valores segun el tipo de cuenta 
+if tipo_cuenta=="PAPER":
+    print("Valores de paper")
+    ip=user_data.get("ip_paper")
+    port=user_data.get("port_paper")
+    clientId=user_data.get("clientid_Bot_paper")
+elif tipo_cuenta=="LIVE":
+    print("valores de live")
+    ip=user_data.get("ip_live")
+    port=user_data.get("port_live")
+    clientId=user_data.get("clientid_Bot_live")
+else:
+    print("Usuario con tipo de cuenta no encontrado")
+    sys.exit(1)  # Termina el programa con un código de error 1
+
+table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
 inicio_ts = config.get("inicio_ts")
 
-if user in usuarios:
-    valores = usuarios[user]
-    print(f"Datos de {user}:")
-    for clave, valor in valores.items():        
-        if tipo_cuenta=="PAPER":
-            if clave=="ip_paper":
-                ip=valor
-            if clave=="port_paper":
-                port=valor
-            if clave=="clientid_Bot":
-                clientId=valor
-            table_posiciones_abiertas="posiciones_abiertas_paper"
-        elif tipo_cuenta=="LIVE":
-            if clave=="ip_live":
-                ip=valor
-            if clave=="port_live":
-                port=valor
-            if clave=="clientid_Bot":
-                clientId=valor
-            table_posiciones_abiertas="posiciones_abiertas"
+print("Valores")
+print("ip: ",ip)
+print("port: ",port)
+print("clientId: ",clientId)
+print("table_posiciones_abiertas: ",table_posiciones_abiertas)
+print("tipocuenta: ",tipo_cuenta)
 
-
-path_file = "D:/TraderEstrategias" #DESARROLLO
-#path_file = "/home/ubuntu/script" #PRODUCCION
 
 # Seleccionar Activos a Analizar
 #tickers = config.tickers
@@ -255,7 +268,7 @@ contrato.currency = "USD"
 # Ejecutar Sistema:
 #Carga de Variables
 #Leer el archivo de Variables
-ruta_archivo=f'{path_file}/data/strategy.txt'
+ruta_archivo=f'{path_folder}/data/strategy.txt'
 if os.path.exists(ruta_archivo):
     # Cargar el archivo
     df_variable = pd.read_csv(ruta_archivo, sep='\t')
@@ -265,11 +278,9 @@ else:
     df_variable = pd.DataFrame()
     print("Archivo no existe. Se creó un DataFrame vacío.")
 
-print(df_variable)
-
 #Carga Estadisticas
 #Leer el archivo de estadisticas
-ruta_archivo=f'{path_file}/data/backtesting/estadisticas_cba.txt'
+ruta_archivo=f'{path_folder}/data/backtesting/estadisticas_cba.txt'
 if os.path.exists(ruta_archivo):
     # Cargar el archivo
     dfestadisticas = pd.read_csv(ruta_archivo, sep='\t')
@@ -278,7 +289,6 @@ else:
     # Crear un DataFrame vacío
     dfestadisticas = pd.DataFrame()
     print("Archivo no existe. Se creó un DataFrame vacío.")
-
 
 #print("===ESTADISTICAS===")
 #print(dfestadisticas[(dfestadisticas["Sharpe Ratio"]>1.7) | (dfestadisticas["Win Rate [%]"]>=75)] )
@@ -290,11 +300,8 @@ else:
 #df_tickers = df_estadisticas[['Ticker']].drop_duplicates()
 #df_tickers = df_tickers.head(2)
 casos = pd.read_csv(CONFIG_FILE3) 
-print(casos)
 df_casos = pd.DataFrame(casos)
-print(df_casos)
 df_tickers = df_casos[['Ticker']].drop_duplicates()
-
 print("cantidad de tickers:", df_tickers.shape[0])
 
 """ # Iterar hasta que cierre el mercado
@@ -306,8 +313,7 @@ for i,row in df_tickers.iterrows():
     contrato.symbol = ticker
     bars = ib.reqHistoricalData(contract=contrato, endDateTime="", durationStr=tiempo_descargado, barSizeSetting=marco_tiempo, whatToShow="TRADES", useRTH=False, formatDate=1)
     df_hist = util.df(bars)
-    df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High',
-                        'low':'Low','close':'Close','volume':'Volume'}, inplace=True)
+    df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High','low':'Low','close':'Close','volume':'Volume'}, inplace=True)
 
     if df_hist is None:
         #Volver a ejecutar la descarga, antes intentar encender el ushmds
@@ -500,8 +506,8 @@ for i,row in df_tickers.iterrows():
         lstUltCruceA = df[(df['cruce_medias2']==1) & (df.index>=idxEvaluar)].index
         df.loc[lstUltCruceA,'cruce_mediasx'] = 1
 
-    print("===> cantidad cruce alcista:", df[(df['cruce_medias']==1)].shape[0])
-    print("===> cantidad cruce bajista:", df[(df['cruce_medias2']==-1)].shape[0])
+    #print("===> cantidad cruce alcista:", df[(df['cruce_medias']==1)].shape[0])
+    #print("===> cantidad cruce bajista:", df[(df['cruce_medias2']==-1)].shape[0])
 
     #drop columnas
     df.drop({'cruce_medias2'}, axis=1, inplace=True)
@@ -510,7 +516,7 @@ for i,row in df_tickers.iterrows():
 
     #Leer el archivo de PREDICCION DE STRIKE
     #Archivo anterior
-    ruta_archivo=f'{path_file}/data/prediccion_strike.txt'
+    ruta_archivo=f'{path_folder}/data/prediccion_strike.txt'
     if os.path.exists(ruta_archivo):
         # Cargar el archivo
         df_strike_pred_old = pd.read_csv(ruta_archivo, sep='\t')
@@ -566,15 +572,12 @@ for i,row in df_tickers.iterrows():
                         fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S")                
                         print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
 
-                        
-
                         filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='long'")
                         mov_calculado = np.float64(filtro.iloc[0]["strike_price_q3"])
                         print("--- Alza semana:", filtro.shape[0],", dato:", mov_calculado)
                         strike_calculado = Decimal(str(mov_calculado))
                         #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
                         # Long CALL esperando +strike_calculado USD de movimiento
-
                         
                         order_call = ibkr.run_strategy(symbol=ticker, side='CALL', expected_move=np.float64(strike_calculado), qty_contracts=1)
 
@@ -630,7 +633,7 @@ for i,row in df_tickers.iterrows():
                     if 0<dt1_hour.hour<=9:
                         hor_rango=6
                     else:
-                        hor_rango=2
+                        hor_rango=1
 
                     if 0 <= diff <= hor_rango: #HORAS MENOR A 5
                         print("===PASO HORAS===")
@@ -655,8 +658,8 @@ for i,row in df_tickers.iterrows():
                             print("premium_total:",order_put["premium_total"])
                             print("estimated_total_cost:",order_put["estimated_total_cost"])
                             print("breakeven:",order_put["breakeven"])
-                            print("take_profit_price:",order_put["take_profit_price"])
-                            print("parent_orderId:",order_put["parent_orderId"])
+                            #print("take_profit_price:",order_put["take_profit_price"])
+                            #print("parent_orderId:",order_put["parent_orderId"])
 
                             contrat = Contract(order_put["contract"])
                             financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"

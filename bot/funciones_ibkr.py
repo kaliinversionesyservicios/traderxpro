@@ -1,27 +1,24 @@
 from ib_insync import *
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import os
 import json
+import decimal as Decimal
 
 # === Configuración ===
 #IB_HOST = '127.0.0.1'
 IB_HOST = '3.13.179.45'
-IB_PORT = 4002          # 7496 live / 7497 paper por defecto
+IB_PORT = 4002   # 7496 live / 7497 paper por defecto
 IB_CLIENT_ID = 502
 
-MAX_DAYS_TO_EXPIRY = 8
-MAX_PREMIUM_USD = 250.0
-TAKE_PROFIT_MULT = 1.75   # 75% profit
-ESTIMATED_FEES_PER_CONTRACT = 1.00  # ajusta según tu cuenta/mercado
-USE_MID_PRICE = True      # True: usar mid, False: usar last/ask
 
 #cargar JSON configuracion
 
-BASE_DIR="D:/traderxpro/" #Desarrollo
+#path_folder="/mnt/efs" #Produccion
+path_folder="D:/traderxpro/" #Desarrollo
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
-ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
+ROOT_DIR = os.path.dirname(path_folder)  # subimos un nivel (raíz del proyecto)
 CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
 
 def cargar_configuracion_riesgo():
@@ -31,8 +28,19 @@ def cargar_configuracion_riesgo():
             return json.load(f)
     return None
 
+#Obteniendo parametros de configuracion
 config_prev = cargar_configuracion_riesgo()
-trainling_stop = config_prev.get("inicio_ts")
+inicio_ts = config_prev.get("inicio_ts")
+inv_sesion = config_prev.get("inv_sesion")
+cant_trades = config_prev.get("cant_trades")
+#print("precio_max_prima:",config_prev.get("precio_max_prima"), "tipo:", type(config_prev.get("precio_max_prima")))
+
+
+MAX_DAYS_TO_EXPIRY = 8
+MAX_PREMIUM_USD = config_prev.get("precio_max_prima")
+TAKE_PROFIT_MULT = 1.75   # 75% profit
+ESTIMATED_FEES_PER_CONTRACT = 1.00  # ajusta según tu cuenta/mercado
+USE_MID_PRICE = True      # True: usar mid, False: usar last/ask
 
 # ===== Helpers =====
 
@@ -252,6 +260,18 @@ def positions_open(ib: IB, symbol, side):
                     cant=cant+1    
     return cant
 
+def positions_open_day(ib: IB):
+    trades = ib.trades()
+    hoy =date.today()
+    # Ejecuciones del día
+    trades_hoy = [
+        t for t in trades 
+        if any(log.time.date() == hoy for log in t.log)
+        ]
+    symbols_hoy = {t.contract.symbol for t in trades_hoy}
+    cant = len(symbols_hoy)
+    return cant
+
 # ===== Ejecución end-to-end =====
 
 def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: int = 1):
@@ -265,10 +285,18 @@ def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: in
     try:
         print("carlos h1 run_strategy")
 
-        #Revisar si hay trade abierto mismo symbol y right --> es decir por ejemplo SPY - CALL, no abrira posiciones con ek mismo symbol y right
+        #Revisar si hay trade abierto mismo symbol y right --> es decir por ejemplo SPY - CALL, no abrira posiciones con el mismo symbol y right
         cant_pos = positions_open(ib, symbol, side)
+        cant_pos_day = positions_open_day(ib)
 
-        if cant_pos==0:
+
+#config_prev = cargar_configuracion_riesgo()
+#inicio_ts = config_prev.get("inicio_ts")
+#inv_sesion = config_prev.get("inv_sesion")
+#precio_max_prima = config_prev.get("precio_max_prima")
+#cant_trades = config_prev.get("cant_trades")
+
+        if cant_pos==0 & cant_pos_day<=cant_trades:
             choice = pick_option_contract(ib, symbol, side, expected_move)
             print("carlos h2 run_estrategy")
             if choice:
@@ -312,7 +340,7 @@ def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: in
                         "premium_total": premium_total,
                         "estimated_total_cost": est_cost_total,
                         "breakeven": be,
-                        "trailing_stop": trainling_stop,                 
+                        "trailing_stop": inicio_ts,
                         "orderId": trade_parent.order.orderId
                     }
                 else:
