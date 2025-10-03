@@ -7,46 +7,24 @@ import decimal as Decimal
 
 # === Configuración ===
 #IB_HOST = '127.0.0.1'
-IB_HOST = '3.13.179.45'
-IB_PORT = 4002   # 7496 live / 7497 paper por defecto
 IB_CLIENT_ID = 502
 
 
-#cargar JSON configuracion
-
 #path_folder="/mnt/efs" #Produccion
-path_folder="D:/traderxpro/" #Desarrollo
-
-#BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
-ROOT_DIR = os.path.dirname(path_folder)  # subimos un nivel (raíz del proyecto)
-CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
-
-def cargar_configuracion_riesgo():
-    """Carga la configuración de riesgo desde un archivo JSON si existe"""
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    return None
-
-#Obteniendo parametros de configuracion
-config_prev = cargar_configuracion_riesgo()
-inicio_ts = config_prev.get("inicio_ts")
-inv_sesion = config_prev.get("inv_sesion")
-cant_trades = config_prev.get("cant_trades")
-#print("precio_max_prima:",config_prev.get("precio_max_prima"), "tipo:", type(config_prev.get("precio_max_prima")))
+# path_folder="D:/traderxpro/" #Desarrollo
+path_folder="/mnt/efs"
 
 
 MAX_DAYS_TO_EXPIRY = 8
-MAX_PREMIUM_USD = config_prev.get("precio_max_prima")
 TAKE_PROFIT_MULT = 1.75   # 75% profit
 ESTIMATED_FEES_PER_CONTRACT = 1.00  # ajusta según tu cuenta/mercado
 USE_MID_PRICE = True      # True: usar mid, False: usar last/ask
 
 # ===== Helpers =====
 
-def connect_ib():
+def connect_ib(ip,port):
     ib = IB()
-    ib.connect(IB_HOST, IB_PORT, clientId=IB_CLIENT_ID)
+    ib.connect(ip, port, clientId=IB_CLIENT_ID)
     ib.reqMarketDataType(1)  # 1=live, 2=frozen, 3=delayed, 4=delayed-frozen
     return ib
 
@@ -90,7 +68,7 @@ def option_mid_or_last(t: Ticker):
             return float(v)
     return None
 
-def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float):
+def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float,precio_max_prima:float):
     """
     side: 'CALL' o 'PUT'
     expected_move: cuánto esperas que suba/baje el subyacente (en USD)
@@ -163,11 +141,11 @@ def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float):
                 continue
             mult = int(opt.multiplier or 100)
             premium_total = px * mult
-            if premium_total <= MAX_PREMIUM_USD:
+            if premium_total <= precio_max_prima:
                 valid.append((opt, px, premium_total))
 
         if not valid:
-            print (f"No hay contratos con prima ≤ {MAX_PREMIUM_USD} USD en la ventana")
+            print (f"No hay contratos con prima ≤ {precio_max_prima} USD en la ventana")
             #raise RuntimeError("No hay contratos con prima ≤ 200 USD en la ventana")
 
         # 5) elegir el más caro (pero ≤ 250)
@@ -274,14 +252,14 @@ def positions_open_day(ib: IB):
 
 # ===== Ejecución end-to-end =====
 
-def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: int = 1):
+def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: int = 1,ip:str="3.3.3.3",port:int=0,id_file:str="default",inicio_ts:float=0.0,cant_trades=0,precio_max_prima:float=0.0):
     """
     symbol: subyacente (ej. 'AAPL')
     side: 'CALL' o 'PUT'
     expected_move: movimiento esperado en USD para calcular strike objetivo
     qty_contracts: cantidad de contratos a comprar (cada contrato suele ser 100 acciones)
     """
-    ib = connect_ib()
+    ib = connect_ib(ip,port)
     try:
         print("carlos h1 run_strategy")
 
@@ -297,7 +275,7 @@ def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: in
 #cant_trades = config_prev.get("cant_trades")
 
         if cant_pos==0 & cant_pos_day<=cant_trades:
-            choice = pick_option_contract(ib, symbol, side, expected_move)
+            choice = pick_option_contract(ib, symbol, side, expected_move,precio_max_prima)
             print("carlos h2 run_estrategy")
             if choice:
                 c = choice["contract"]

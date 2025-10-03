@@ -44,12 +44,12 @@ def cargar_config():
 #--------------------------
 # Variables
 #--------------------------
-#path_folder="/mnt/efs" #produccion
+path_folder="/mnt/efs" #produccion
 # path_folder="/bot_aws" #Desarrollo
-path_folder= "D:/TraderEstrategias" #Desarrollo carlos
-user="carlosml0287"
+# path_folder= "D:/TraderEstrategias" #Desarrollo carlos
+# user="carlosml0287"
 # user="investyolanda1"
-# user="Ventanilla39"
+user="Ventanilla39"
 param_cuenta=int(sys.argv[1]) #0 paper 1 live
 
 CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
@@ -95,7 +95,8 @@ else:
 
 table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
 inicio_ts = config.get("inicio_ts")
-
+cant_trades=config.get("cant_trades")
+precio_max_prima=config.get("precio_max_prima")
 print("Valores")
 print("ip: ",ip)
 print("port: ",port)
@@ -579,7 +580,17 @@ for i,row in df_tickers.iterrows():
                         #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
                         # Long CALL esperando +strike_calculado USD de movimiento
                         
-                        order_call = ibkr.run_strategy(symbol=ticker, side='CALL', expected_move=np.float64(strike_calculado), qty_contracts=1)
+                        order_call = ibkr.run_strategy(
+                            symbol=ticker,
+                            side='CALL',
+                            expected_move=np.float64(strike_calculado), 
+                            qty_contracts=1,
+                            ip=ip,
+                            port=port,
+                            id_file=id_file,
+                            inicio_ts=inicio_ts,
+                            cant_trades=cant_trades,
+                            precio_max_prima=precio_max_prima)
 
                         if order_call:
                             print("====Datos de la posicion===")
@@ -651,7 +662,17 @@ for i,row in df_tickers.iterrows():
 
                         
                         # Long PUT esperando -strike_calculado USD de movimientoo                    
-                        order_put = ibkr.run_strategy(symbol=ticker, side='PUT', expected_move=np.float64(strike_calculado), qty_contracts=1)
+                        order_put = ibkr.run_strategy(
+                            symbol=ticker, 
+                            side='PUT', 
+                            expected_move=np.float64(strike_calculado), 
+                            qty_contracts=1,
+                            ip=ip,
+                            port=port,
+                            id_file=id_file,
+                            inicio_ts=inicio_ts,
+                            cant_trades=cant_trades,
+                            precio_max_prima=precio_max_prima)
                         if order_put:   
                             print("====Datos de la posicion===")
                             print("entry_price_per_share:",order_put["entry_price_per_share"])

@@ -17,10 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from bot import script_crud as bd
-
-
+# sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+# from bot import script_crud as bd #Desarrollo
+import script_crud as bd
 
 #------------------------
 # funciones
@@ -43,16 +42,15 @@ def cargar_config():
 #--------------------------
 # Variables para rutas
 #--------------------------
-#path_file="/mnt/efs" #produccion
-path_file = "D:/TraderEstrategias" #desarrollo carlos
+path_file="/mnt/efs" #produccion
+# path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
-user="carlosml0287"
-# user="investyolanda1"
+# user="carlosml0287"
+user="investyolanda1"
 # user="Ventanilla39"
 # param_cuenta=int(sys.argv[1]) #0-PAPER 1-live
 param_cuenta=int(os.getenv("PARAM_CUENTA", "0"))  # por defecto 0 = PAPER
 CONFIG_FILE = f"{path_file}/config_gestion_riesgo/param.json"
-
 
 usuarios=cargar_usuario()
 user_data=usuarios[user]
@@ -127,7 +125,7 @@ print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 #BASE DE DATOS DYNAMODB
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -552,7 +550,7 @@ async def get_data(ticker: str):
     bars = await ib.reqHistoricalDataAsync(
     contract=contract,
     endDateTime="",
-    durationStr='10 D',
+    durationStr='13 D',
     barSizeSetting='1 hour',
     whatToShow='TRADES',
     useRTH=0,
@@ -675,7 +673,7 @@ async def get_data_all():
 
         #TRAILING STOP
         #Generar Trailing Stop con ATR
-        atr_mult_sl_1 = 1
+        atr_mult_sl_1 = 0.8
         entry_price = trailing_stop = None
       
         #pricenow = df_datamkt["close"].iloc[-1]

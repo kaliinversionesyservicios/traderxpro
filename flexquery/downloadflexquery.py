@@ -7,6 +7,7 @@ from decimal import Decimal
 import os
 import json
 import sys
+import time
 
 #Parametros a recibir
 user = str(sys.argv[1])
@@ -16,7 +17,7 @@ param_cuenta=int(sys.argv[2]) #0 paper 1 live
 #variables globales
 path_folder="/mnt/efs" #Produccion
 #path_folder="/bot_aws" #Desarrollo Linder
-#path_folder="/traderxpro" #Desarrollo Carlos
+# path_folder="/traderxpro" #Desarrollo Carlos
 
 #PRODUCCION
 CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
@@ -46,22 +47,23 @@ if user not in usuarios:
     sys.exit(1)  # Termina el programa con un código de error 1
 
 user_data = usuarios[user]
+id_folder=user_data.get("account_idpaper") #solo exite una sola carpeta de mi folder de config_riesgo.json
 
 #verificamos que cuenta es
 if param_cuenta==0:
     tipo_cuenta="PAPER"
     id_cuenta=user_data.get("account_idpaper")
-    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} PAPER")
+    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} PAPER - con folder: {id_folder}")
 elif param_cuenta==1:
     tipo_cuenta="LIVE"
     id_cuenta=user_data.get("account_idlive")
-    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} LIVE")
+    print(f"Usuario: {user} - Cuenta seleccionada: {id_cuenta} LIVE - con folder: {id_folder}")
 
-CONFIG_FILE2 = f"{path_folder}/config_gestion_riesgo/config_{id_cuenta}/config_riesgo.json"
+CONFIG_FILE2 = f"{path_folder}/config_gestion_riesgo/config_{id_folder}/config_riesgo.json"
 
 config = cargar_config()
-
-
+print("FOLDER: ",CONFIG_FILE2)
+print("configuracion leida: ",config)
 #--------------------------
 # ASIGNACION DE VARIABLES
 #----------------------------
@@ -140,24 +142,54 @@ def create_tableAccount():
             raise
 
 # Obtener Reference Code
-def get_reference_code():
+# def get_reference_code():
+#     url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t={TOKEN}&q={QUERY_ID}&v=3"
+#     resp = requests.get(url)
+#     resp.raise_for_status()
+#     data = xmltodict.parse(resp.text)
+#     return data["FlexStatementResponse"]["ReferenceCode"]
+
+# Obtener data
+# def get_data():
+#     ref_code = get_reference_code()
+#     url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement?q={ref_code}&t={TOKEN}&v=3"
+#     resp = requests.get(url)
+#     resp.raise_for_status()
+#     return resp
+
+def fetch_account():
+    #OBTENCION DE REFERENCE CODE 
     url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t={TOKEN}&q={QUERY_ID}&v=3"
     resp = requests.get(url)
     resp.raise_for_status()
     data = xmltodict.parse(resp.text)
-    return data["FlexStatementResponse"]["ReferenceCode"]
+    time.sleep(3)
+    ref_code = data["FlexStatementResponse"]["ReferenceCode"]
+    #Validacion del codigo obtenido
+    if "FlexStatementResponse" not in data or "ReferenceCode" not in data["FlexStatementResponse"]:
+        error_msg = data.get("FlexStatementResponse", {}).get("ErrorMessage", "Respuesta inválida")
+        raise RuntimeError(f"❌ Error en SendRequest (account): {error_msg}")
+    
+    #OBTENCION DE DATOS
+    #Polling hasta que el reporte este listo
+    for intento in range(10): 
+        url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement?q={ref_code}&t={TOKEN}&v=3"
+        resp2 = requests.get(url)
+        resp2.raise_for_status()
+        data = xmltodict.parse(resp2.text)
 
-# Obtener data
-def get_data():
-    ref_code = get_reference_code()
-    url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement?q={ref_code}&t={TOKEN}&v=3"
-    resp = requests.get(url)
-    resp.raise_for_status()
-    return resp
+        if "FlexQueryResponse" in data:
+            print("✅ Reporte de cuentas listas")
+            break
+        else:
+            error_msg = data.get("FlexStatementResponse", {}).get("ErrorMessage", "Desconocido")
+            print(f"⏳ Intento {intento+1}: Reporte aún no disponible ({error_msg})")
+            time.sleep(5)
+    else:
+        print("❌ No se pudo obtener el reporte de cuentas tras varios intentos:", data)
+        raise RuntimeError(f"❌ No se pudo obtener el reporte de cuentas tras varios intentos: {data}")
 
-def fetch_account():
-    resp = get_data()
-    data = xmltodict.parse(resp.text)
+
     statements = data["FlexQueryResponse"]["FlexStatements"]["FlexStatement"]
     accounts = statements.get("AccountInformation", [])
     if not accounts:
@@ -185,10 +217,41 @@ def fetch_account():
 
 # Descargar XML y parsearlo
 def fetch_trades():
-    resp = get_data()
+    url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t={TOKEN}&q={QUERY_ID}&v=3"
+    resp = requests.get(url)
+    resp.raise_for_status()
     data = xmltodict.parse(resp.text)
-    statements = data["FlexQueryResponse"]["FlexStatements"]["FlexStatement"]["Trades"]
+    time.sleep(3)
+    ref_code = data["FlexStatementResponse"]["ReferenceCode"]
+
+     # Validar si vino ReferenceCode
+    if "FlexStatementResponse" not in data or "ReferenceCode" not in data["FlexStatementResponse"]:
+        error_msg = data.get("FlexStatementResponse", {}).get("ErrorMessage", "Respuesta inválida")
+        raise RuntimeError(f"❌ Error en SendRequest (trades): {error_msg}")
+    
+
+    #OBTENCION DE DATA
+    # --- Polling hasta que el reporte esté listo ---
+    for intento in range(10):  # máximo 10 intentos
+        url = f"https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement?q={ref_code}&t={TOKEN}&v=3"
+        #print("url: ",url)
+        resp2 = requests.get(url)
+        resp2.raise_for_status()
+        data = xmltodict.parse(resp2.text)
+
+        if "FlexQueryResponse" in data:
+            print("reporte listo ")
+            break
+        else:
+            error_msg = data.get("FlexStatementResponse", {}).get("ErrorMessage", "Desconocido")
+            print(f"⏳ Intento {intento+1}: Reporte aún no disponible ({error_msg})")
+            time.sleep(5)  # espera 5 segundos antes de reintentar
+    else:
+        raise RuntimeError(f"❌ No se pudo obtener el reporte de trades tras varios intentos: {data}")
+
+    statements = data["FlexQueryResponse"]["FlexStatements"]["FlexStatement"].get("Trades",{})
     trades = statements.get("Trade", [])
+
     if not trades:
         return []
 
@@ -259,10 +322,10 @@ if __name__ == "__main__":
         save_trades(trades)
     else:
         print("⚠️ No se encontraron trades en el reporte Flex Query")
-
+    time.sleep(10)  # pausa de 10 segundos
     create_tableAccount()
     accounts = fetch_account()
-    if trades:
+    if accounts:
         save_account(accounts)
     else:
         print("⚠️ No se encontraron accounts en el reporte Flex Query")
