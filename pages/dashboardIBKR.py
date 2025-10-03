@@ -338,7 +338,7 @@ def send_docker_command(command):
     )
     return response
 
-st.subheader("📡 Estado Stop Loss")
+# st.subheader("📡 Estado Stop Loss")
 
 ok, estado_ib_manager = check_ib_manager(API_BASE)
 
@@ -452,12 +452,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-estado_ib_color = color_on if estado_ib_manager == "ACTIVO" else color_off
+estado_ib_color = color_on if estado_ib_manager == "Activo" else color_off
 
 col_ib1, col_sep_ib, col_ib2, col_ib3 = st.columns([2,0.1,2,2])
 with col_ib1:
     st.markdown(
-        f"<span style='color:{color_live}; font-weight:bold;'>📦 IB Manager:</span> "
+        f"<span style='color:{color_live}; font-weight:bold;'>📦Estado Stop Loss:</span> "
         f"<span style='background-color:{color_base}; color:{estado_ib_color}; "
         f"padding:3px 6px; border-radius:4px;'>{estado_ib_manager}</span>",
         unsafe_allow_html=True
