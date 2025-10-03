@@ -61,7 +61,7 @@ client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBr
 
 match user:
     case "carlosml0287":
-        SCHEDULE_NAME="cron_scanner_bot_carlos"
+        SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
         API_BASE="http://3.13.179.45:8000"
         # API_BASE = "http://127.0.0.1:8000"
     case "investyolanda1":
