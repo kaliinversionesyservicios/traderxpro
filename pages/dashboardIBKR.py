@@ -52,8 +52,8 @@ if not st.session_state.usuario:
 #----------------------
 # VARIABLES GLOBALES
 #----------------------
-#path_folder="/mnt/efs" #PRODUCCION
-path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+path_folder="/mnt/efs" #PRODUCCION
+# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -192,10 +192,8 @@ def fetch_alldatamkt():
 
 
 # Ruta donde se guardará la configuración
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
-ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
-CONFIG_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "param.json")
-CONFIG_FILE2 = os.path.join(ROOT_DIR, "config_gestion_riesgo", "config_riesgo.json")
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
+# ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
 
 
 user="carlosml0287" #configurar
@@ -213,6 +211,7 @@ def cargar_config():
         with open(CONFIG_FILE2, "r") as f:
             return json.load(f)
     return None
+
 
 
 st.title("📊 Dashboard - IBKR")
@@ -261,9 +260,10 @@ if user in usuarios:
             token=valor
         if clave=="id_flexquery":
             queryid=valor        
+CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id_file}/config_riesgo.json"
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -311,11 +311,11 @@ for indice, acc in enumerate(accountSummary_data):
 # Auto-refresh cada 15 segundo
 st_autorefresh(interval=15000, key="refresh")
 
-path_file = "D:/TraderEstrategias" #DESARROLLO
+# path_file = "D:/TraderEstrategias" #DESARROLLO
 #path_file = "/home/ubuntu/script" #PRODUCCION
 #Carga de Variables
 #Leer el archivo de Variables
-ruta_archivo=f'{path_file}/data/strategy.txt'
+ruta_archivo=f'{path_folder}/data/strategy.txt'
 if os.path.exists(ruta_archivo):
     # Cargar el archivo
     df_variable = pd.read_csv(ruta_archivo, sep='\t')
@@ -919,10 +919,10 @@ with tab3:
 # ----------------------
 def guardar_configuracion_riesgo(config):
     # Crear carpeta si no existe
-    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+    os.makedirs(os.path.dirname(CONFIG_FILE2), exist_ok=True)
     
     # Guardar JSON
-    with open(CONFIG_FILE, "w") as f:
+    with open(CONFIG_FILE2, "w") as f:
         json.dump(config, f, indent=4)
 
 
@@ -942,9 +942,10 @@ with tab4:
     # URL LINDER
     #url_trades = "D:/scripts_aws/data/backtesting/estadisticas_cba.txt"
     #URL CARLOS
-    url_trades="D:/data/backtesting/estadisticas_cba.txt"
-
-    ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
+    #url_trades="D:/data/backtesting/estadisticas_cba.txt"
+    url_trades=f"{path_folder}/data/backtesting/estadisticas_cba.txt"
+    # ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
+    ESTRATEGIAS_FILE=f"{path_folder}/config_gestion_riesgo/config_{id_file}/estrategias_seleccionadas.csv"
 
     data = pd.read_csv(url_trades, sep='\t')
     # ----------- BARRA SUPERIOR -----------
