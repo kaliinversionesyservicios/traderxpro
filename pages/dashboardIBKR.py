@@ -57,6 +57,7 @@ path_folder="/mnt/efs" #PRODUCCION
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
+ssm = boto3.client("ssm", region_name="us-east-2")
 #Verificar si existe un usuario
 
 match user:
@@ -64,12 +65,15 @@ match user:
         SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
         API_BASE="http://3.13.179.45:8000"
         # API_BASE = "http://127.0.0.1:8000"
+        INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
         API_BASE="http://3.140.173.63:8000"
+        INSTANCE_ID="i-0ebd4e74d90835595"
     case "Ventanilla39":
         SCHEDULE_NAME="cron_scanner_bot_elsy"
         API_BASE="http://3.149.168.211:8000"
+        INSTANCE_ID="i-0de59262800d37591"
     case "usuario04":
         SCHEDULE_NAME="cron_scanner_usuario04"
 
@@ -326,7 +330,15 @@ def check_ib_manager(base_url):
     except Exception as e:
         return False, f"No responde ({e.__class__.__name__})"
 
-st.subheader("📡 Estado IB Manager")
+def send_docker_command(command):
+    response = ssm.send_command(
+        InstanceIds=[INSTANCE_ID],
+        DocumentName="AWS-RunShellScript",
+        Parameters={"commands": [command]}
+    )
+    return response
+
+st.subheader("📡 Estado Stop Loss")
 
 ok, estado = check_ib_manager(API_BASE)
 
@@ -334,6 +346,20 @@ if ok:
     st.success(f"Instancia de {user} ✅ {estado}")
 else:
     st.error(f"Instancia de {user} ❌ {estado}")
+
+# Botones de control
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔄 Reiniciar Stop Loss"):
+        resp = send_docker_command("docker restart ib_manager_paper")
+        st.success("Comando de reinicio enviado ✅")
+
+with col2:
+    if st.button("⏹️ Detener Stop Loss"):
+        resp = send_docker_command("docker stop ib_manager_paper")
+        st.warning("Comando de stop enviado ⛔")
+
 #FIN AQUI
 
 
