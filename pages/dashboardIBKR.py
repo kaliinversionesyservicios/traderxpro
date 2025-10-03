@@ -194,10 +194,6 @@ def fetch_alldatamkt():
 # Ruta donde se guardará la configuración
 # BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
 # ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
-
-
-user="carlosml0287" #configurar
-
 def cargar_usuario():
     """Carga parametros de Usuario"""
     if os.path.exists(CONFIG_FILE):
@@ -211,6 +207,16 @@ def cargar_config():
         with open(CONFIG_FILE2, "r") as f:
             return json.load(f)
     return None
+
+
+usuarios = cargar_usuario()
+user_data=usuarios[user]
+st.write("Los datos de user data es: ",user_data)
+id=user_data.get("account_idpaper")
+st.write("El id es: ",id)
+CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id}/config_riesgo.json"
+config = cargar_config()
+
 
 
 
