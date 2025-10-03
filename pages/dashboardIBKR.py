@@ -340,7 +340,7 @@ def send_docker_command(command):
 
 st.subheader("📡 Estado Stop Loss")
 
-ok, estado = check_ib_manager(API_BASE)
+ok, estado_ib_manager = check_ib_manager(API_BASE)
 
 if ok:
     st.success(f"Instancia de {user} ✅ {estado}")
@@ -452,7 +452,31 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+estado_ib_color = color_on if estado_ib_manager == "ACTIVO" else color_off
 
+col_ib1, col_sep_ib, col_ib2, col_ib3 = st.columns([2,0.1,2,2])
+with col_ib1:
+    st.markdown(
+        f"<span style='color:{color_live}; font-weight:bold;'>📦 IB Manager:</span> "
+        f"<span style='background-color:{color_base}; color:{estado_ib_color}; "
+        f"padding:3px 6px; border-radius:4px;'>{estado_ib_manager}</span>",
+        unsafe_allow_html=True
+    )
+
+with col_sep_ib:
+    st.markdown("<div style='border-left:1px solid #c7c7c7; height:24px;'></div>", unsafe_allow_html=True)
+
+with col_ib2:
+    if st.button("🔄 Reiniciar", key="restart_ib", help="Reiniciar servicio IB Manager"):
+        resultado = send_docker_command("docker restart ib_manager_paper")
+        st.info("Reinicio enviado al servidor.")
+        st.rerun()
+
+with col_ib3:
+    if st.button("⏹ Detener", key="stop_ib", help="Detener servicio IB Manager"):
+        resultado = send_docker_command("docker stop ib_manager_paper")
+        st.warning("Servicio detenido.")
+        st.rerun()
 
 estado_actual, _ = get_schedule_state()  # tomamos solo el estado
 st.write("Estado actual del bot:", estado_actual)
