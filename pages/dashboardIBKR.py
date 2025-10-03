@@ -342,23 +342,23 @@ st.subheader("📡 Estado Stop Loss")
 
 ok, estado_ib_manager = check_ib_manager(API_BASE)
 
-if ok:
-    st.success(f"Instancia de {user} ✅ {estado}")
-else:
-    st.error(f"Instancia de {user} ❌ {estado}")
+# if ok:
+#     st.success(f"Instancia de {user} ✅ {estado}")
+# else:
+#     st.error(f"Instancia de {user} ❌ {estado}")
 
-# Botones de control
-col1, col2 = st.columns(2)
+# # Botones de control
+# col1, col2 = st.columns(2)
 
-with col1:
-    if st.button("🔄 Reiniciar Stop Loss"):
-        resp = send_docker_command("docker restart ib_manager_paper")
-        st.success("Comando de reinicio enviado ✅")
+# with col1:
+#     if st.button("🔄 Reiniciar Stop Loss"):
+#         resp = send_docker_command("docker restart ib_manager_paper")
+#         st.success("Comando de reinicio enviado ✅")
 
-with col2:
-    if st.button("⏹️ Detener Stop Loss"):
-        resp = send_docker_command("docker stop ib_manager_paper")
-        st.warning("Comando de stop enviado ⛔")
+# with col2:
+#     if st.button("⏹️ Detener Stop Loss"):
+#         resp = send_docker_command("docker stop ib_manager_paper")
+#         st.warning("Comando de stop enviado ⛔")
 
 #FIN AQUI
 
