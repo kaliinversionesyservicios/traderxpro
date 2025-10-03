@@ -24,6 +24,9 @@ from zoneinfo import ZoneInfo
 import json
 import csv
 import sys
+import pytz
+
+# ny_tz = pytz.timezone("America/New_York")
 #------------------------
 # funciones
 #------------------------
@@ -47,9 +50,9 @@ def cargar_config():
 path_folder="/mnt/efs" #produccion
 # path_folder="/bot_aws" #Desarrollo
 # path_folder= "D:/TraderEstrategias" #Desarrollo carlos
-# user="carlosml0287"
+user="carlosml0287"
 # user="investyolanda1"
-user="Ventanilla39"
+# user="Ventanilla39"
 param_cuenta=int(sys.argv[1]) #0 paper 1 live
 
 CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
@@ -170,74 +173,6 @@ class IBApp(EWrapper, EClient):
             )
             time.sleep(1.5)  # importante para evitar bloqueo de IB por exceso de llamadas
 
-#IB_app = IB_Trading(log_file="alternative_errors.txt", errors_verbose=True)
-#IB_app.connect(host="127.0.0.1", port=7497, clientId=501)
-#IB_app.connect("3.13.179.45", 4002, clientId=501)
-
-# # Definir Función para ejecutar órdenes
-# def ejecutar_orden(IB_app: IB_Trading, ticker: str, contrato: Contract, direccion: str, cantidad: int = 10) -> None:
-    
-#     """
-#     Ejecuta una orden de mercado para un activo específico.
-#     """
-    
-#     # Ejecutar Orden
-#     orden_mercado = IB_app.market_order(action=direccion, totalQuantity=cantidad)
-#     next_id = IB_app.reqIds(numIds=-1)
-#     IB_app.placeOrder(orderId=next_id, contract=contrato, order=orden_mercado)
-    
-
-# # Definir Función para procesar las Posiciones
-# def procesar_posiciones(IB_app: IB_Trading, ticker: str, direccion: str, contrato: Contract) -> None:
-    
-#     """
-#     Gestiona las posiciones existentes y decide si deben de ejecutar nuevas órdenes.
-    
-#     La función verifica las posiciones actuales para el activo especificado. Si existen posiciones y su dirección
-#     es opuesta a la orden solicitada, se ejecuta una nueva orden en la dirección especificada para cerrar la posición
-#     actual.
-    
-#     En cambio, si la señal generada coincide con la dirección de la posición actual, no se abre una nueva posición
-#     y se mantiene únicamente la existente.
-#     """
-    
-#     # Obtener Cartera de Inversión
-#     posiciones = IB_app.reqPositions()
-#     if isinstance(posiciones, pd.DataFrame):
-#         # Filtrar posiciones reales
-#         posiciones = posiciones[(posiciones["Cantidad"] != 0) & (posiciones["Símbolo"] == ticker)]
-#         if len(posiciones) > 0:
-#             cantidad = posiciones["Cantidad"].iloc[0]
-#             # Revisar si se tiene que cerrar (Se generó una señal opuesta)
-#             if (direccion == "BUY" and cantidad < 0) or (direccion == "SELL" and cantidad > 0):
-#                 ejecutar_orden(IB_app=IB_app, ticker=ticker, contrato=contrato, direccion=direccion)
-                
-                
-# # Definir Función para Procesar las órdenes
-# def procesar_ordenes(IB_app: IB_Trading, ticker: str, direccion: str, contrato: Contract) -> None:
-    
-#     """
-#     Revisa y gestiona las órdenes abiertas para un activo específico.
-    
-#     La función primero revisa si hay órdenes para el activo especificado. Si no hay órdenes abiertas,
-#     genera una nueva orden de mercado en la dirección especificada. Si ya existen órdenes abiertas y la dirección
-#     actual es opuesta a la dirección de las órdenes abiertas, cancela las órdenes existentes y coloca una nueva
-#     orden en la dirección especificada.
-#     """
-    
-#     # Obtener Órdenes
-#     ordenes = IB_app.reqAllOpenOrders()
-#     if isinstance(ordenes, pd.DataFrame):
-#         ordenes = ordenes[ordenes["activo"] == ticker]
-#         # Abrir Posición
-#         if len(ordenes) == 0:
-#             ejecutar_orden(IB_app=IB_app, ticker=ticker, contrato=contrato, direccion=direccion)
-#         else:
-#             posicion_actual = ordenes["posiscion"].iloc[0]
-#             if (direccion == "BUY" and posicion_actual == "SELL") or (direccion == "SELL" and posicion_actual == "BUY"):
-#                 IB_app.cancelOrder(orderId=ordenes["orderId"].iloc[0])
-#                 ejecutar_orden(IB_app=IB_app, ticker=ticker, contrato=contrato, direccion=direccion)
-
 def df_limpiar(df_eval):
     meandif1 = df_eval['ATR'].mean()
     stddif1 = df_eval['ATR'].std()
@@ -251,6 +186,33 @@ def df_limpiar(df_eval):
         row['ATR'], axis=1)
     return copydf
                 
+def mercado_abierto(contract, usar_liquid=True):
+    print("h1 mercado_abierto")
+    details_list =ib.reqContractDetails(contract)
+    details = details_list[0]
+    print("h2 mercado_abierto")
+    ahora = datetime.now(ny_tz)
+    print("ahora (NY):", ahora)
+
+    # elegir entre horario extendido (tradingHours) o solo RTH (liquidHours)
+    horarios_str = details.liquidHours if usar_liquid else details.tradingHours
+    horarios = horarios_str.split(";")
+
+    for h in horarios:
+        if "CLOSED" not in h:
+            inicio, fin = h.split("-")
+            #inicio = ny_tz.localize(datetime.strptime(inicio, "%Y%m%d:%H%M"))
+            inicio = datetime.strptime(inicio, "%Y%m%d:%H%M").replace(tzinfo=ny_tz)
+
+            #fin = ny_tz.localize(datetime.strptime(fin, "%Y%m%d:%H%M"))
+            fin = datetime.strptime(fin, "%Y%m%d:%H%M").replace(tzinfo=ny_tz)
+
+            print("inicio:", inicio, "fin:", fin)
+            if inicio <= ahora <= fin:
+                return True
+    return False
+
+
 
 # Generar Instancia
 ib = IB()
@@ -308,449 +270,411 @@ print("cantidad de tickers:", df_tickers.shape[0])
 """ # Iterar hasta que cierre el mercado
 #while True:"""
 # Revisar si se han generado señales para cada ticker
-for i,row in df_tickers.iterrows():
-    ticker = row["Ticker"]
-    print(f"Ticker: {ticker}")
-    contrato.symbol = ticker
-    bars = ib.reqHistoricalData(contract=contrato, endDateTime="", durationStr=tiempo_descargado, barSizeSetting=marco_tiempo, whatToShow="TRADES", useRTH=False, formatDate=1)
-    df_hist = util.df(bars)
-    df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High','low':'Low','close':'Close','volume':'Volume'}, inplace=True)
-
-    if df_hist is None:
-        #Volver a ejecutar la descarga, antes intentar encender el ushmds
-        ## === REVISAR SI IB GATEWAY esta activo usHmds ====
-
-        #IB_app2 = IB_Trading(log_file="alternative_errors2.txt", errors_verbose=True)
-        ib2 = IB()
-        clientId2 = clientId+1
-        ib2.connect(ip, port, clientId=clientId2)
-        #ib2.connect("127.0.0.1", 4002, clientId=998)
-        #ib2.connect("3.13.179.45", 4002, clientId=998)
-        #ib2.connect("127.0.0.1", 7497, clientId=998)
-        # Definir contrato dummy simple
-        contract = Stock('AAPL', 'SMART', 'USD')
-        
-        # Enviar solicitud dummy
-        bars = ib2.reqHistoricalData(
-            contract,
-            endDateTime='',
-            durationStr='1 D',
-            barSizeSetting='1 day',
-            whatToShow='TRADES',
-            useRTH=True,
-            formatDate=1,
-            keepUpToDate=False
-        )
-        
-        # Cancelar la suscripción inmediatamente para evitar sobrecarga
-        time.sleep(2)
-        ib2.cancelHistoricalData(bars)
-        ib2.disconnect()
-        print("Propósito usHmds activado.")
-
-        bars = ib.reqHistoricalData(contract=contrato, endDateTime="", durationStr=tiempo_descargado, barSizeSetting=marco_tiempo, whatToShow="TRADES", useRTH=False, formatDate=1)        
+cont = Stock('AAPL', "SMART", "USD")
+valMercado = mercado_abierto(cont,True)
+if valMercado==True:
+    for i,row in df_tickers.iterrows():
+        ticker = row["Ticker"]
+        print(f"Ticker: {ticker}")
+        contrato.symbol = ticker
+        bars = ib.reqHistoricalData(contract=contrato, endDateTime="", durationStr=tiempo_descargado, barSizeSetting=marco_tiempo, whatToShow="TRADES", useRTH=False, formatDate=1)
         df_hist = util.df(bars)
-        df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High', 'low':'Low','close':'Close','volume':'Volume'}, inplace=True)
-   
-    if (df_hist is None):
-        (f"===> NO SE PUDO DESCARGAR {ticker}:")
-        continue
-    else:
-        (f"===> Cantidad descargada {ticker}:", df_hist.shape[0])
+        df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High','low':'Low','close':'Close','volume':'Volume'}, inplace=True)
 
-   
-    #Configurar dataframe
-    #==== ALZA ======#    
-    filtro = df_variable.query("Ticker==@ticker")
-    if filtro[filtro["Tag"]=="long"].shape[0]>0:
-        periodoCortoLong = filtro[filtro["Tag"]=="long"].iloc[0]["periodoCorto"]
-        periodoLargoLong = filtro[filtro["Tag"]=="long"].iloc[0]["periodoLargo"]
-    else:
-        periodoCortoLong = 20
-        periodoLargoLong = 40
+        if df_hist is None:
+            #Volver a ejecutar la descarga, antes intentar encender el ushmds
+            ## === REVISAR SI IB GATEWAY esta activo usHmds ====
 
-    #==== BAJA ======#
-    if filtro[filtro["Tag"]=="short"].shape[0]>0:
-        periodoCortoShort = filtro[filtro["Tag"]=="short"].iloc[0]["periodoCorto"]
-        periodoLargoShort = filtro[filtro["Tag"]=="short"].iloc[0]["periodoLargo"]
-    else:
-        periodoCortoShort = 20
-        periodoLargoShort = 40
-
-    print("PeriodoCortoLong:", periodoCortoLong,"periodoLargoLong:", periodoLargoLong, "periodoCortoShort:", periodoCortoShort,  "periodoLargoShort:", periodoLargoShort)
-
-    df = df_hist.copy()
-    # Quitar zona horaria
-    df['Datetime'] = df['Datetime'].dt.tz_localize(None)
-    df.sort_values(by=['Datetime'])
-
-    #print(df.tail(5))
-
-    df['EMACorta'] = df['Low'].ewm(span=periodoCortoLong, adjust=False).mean()
-    df.dropna(inplace=False)
-    df['EMALarga'] = df['Low'].ewm(span=periodoLargoLong, adjust=False).mean()
-    df.dropna(inplace=False)
-
-    df['EMACorta2'] = df['High'].ewm(span=periodoCortoShort, adjust=False).mean()
-    df.dropna(inplace=False)
-    df['EMALarga2'] = df['High'].ewm(span=periodoLargoShort, adjust=False).mean()
-    df.dropna(inplace=False)
-
-    # Calcular +DI, -DI y ADX (todo el DMI)
-    dmi = ta2.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], window=14)
-    df['plus_di'] = dmi.adx_pos()   # +DI
-    df['minus_di'] = dmi.adx_neg()  # -DI
-    df['adx'] = dmi.adx()           # ADX
-
-    #ATR indicador para Trailing Stop Loss
-    df['ATR'] = ta2.volatility.average_true_range(df['High'], df['Low'], df['Close'], window=14)
-    df['ATR2'] = df_limpiar(df)
-    df['EMA35_ATR'] = df['ATR2'].ewm(span=35, adjust=False).mean()
-    df.dropna(inplace=False)
-    
-    #=====AGREGAR PIVOTS=====
-    ord=20
-    ord2=10
-    ord3=7
-
-    # Aseguramos que estas columnas existen
-    pivot_cols = [
-        'pivotHigh', 'pivotLow', 'isPivot',
-        'pivotHigh2', 'pivotLow2', 'isPivot2',
-        'pivotHigh3', 'pivotLow3', 'isPivot3'
-    ]
-
-    for col in pivot_cols:
-        if col not in df.columns:
-            df[col] = np.nan
-
-    max_idx = argrelextrema(df['High'].values, np.greater, order=ord)[0]
-    min_idx = argrelextrema(df['Low'].values, np.less, order=ord)[0]
-
-    max_idx2 = argrelextrema(df['High'].values, np.greater, order=ord2)[0]
-    min_idx2 = argrelextrema(df['Low'].values, np.less, order=ord2)[0]
-
-    max_idx3 = argrelextrema(df['High'].values, np.greater, order=ord3)[0]
-    min_idx3 = argrelextrema(df['Low'].values, np.less, order=ord3)[0]
-
-    # Aplicar el cálculo solo a los índices en la lista
-    df.loc[df.index[max_idx], 'pivotHigh'] = df['High']+1e-3
-    df.loc[df.index[min_idx], 'pivotLow'] = df['Low']-(1e-3)
-    df.loc[df.index[max_idx], 'isPivot'] = 1
-    df.loc[df.index[min_idx], 'isPivot'] = 2
-
-    df.loc[df.index[max_idx2], 'pivotHigh2'] = df['High']+1e-3
-    df.loc[df.index[min_idx2], 'pivotLow2'] = df['Low']-(1e-3)
-    df.loc[df.index[max_idx2], 'isPivot2'] = 1
-    df.loc[df.index[min_idx2], 'isPivot2'] = 2
-
-    df.loc[df.index[max_idx3], 'pivotHigh3'] = df['High']+1e-3
-    df.loc[df.index[min_idx3], 'pivotLow3'] = df['Low']-(1e-3)
-    df.loc[df.index[max_idx3], 'isPivot3'] = 1
-    df.loc[df.index[min_idx3], 'isPivot3'] = 2
-    #=====FIN AGREGAR PIVOTS=====
-
-    #=====AGREGAR COLUMNAS DE CRUCE DE EMAs=====
-    #==CANAL ALCISTA==
-    df['prev_EMACorta'] = df['EMACorta'].shift(1)
-    df['prev_EMALarga'] = df['EMALarga'].shift(1)
-
-    #Cruce de medias
-    df['cruce_medias'] = 0
-    df.loc[(df['prev_EMACorta'] < df['prev_EMALarga']) & (df['EMACorta'] > df['EMALarga']), 'cruce_medias'] = 1  # Golden Cross (Compra)
-    df.loc[(df['prev_EMACorta'] > df['prev_EMALarga']) & (df['EMACorta'] < df['EMALarga']), 'cruce_medias'] = -1 # Death Cross (Venta)
-
-    #drop columnas
-    df.drop({'prev_EMACorta','prev_EMALarga'}, axis=1, inplace=True)
-
-    #==CANAL BAJISTA==#
-    df['prev_EMACorta2'] = df['EMACorta2'].shift(1)
-    df['prev_EMALarga2'] = df['EMALarga2'].shift(1)
-
-    #Cruce de medias
-    df['cruce_medias2'] = 0
-    df.loc[(df['prev_EMACorta2'] < df['prev_EMALarga2']) & (df['EMACorta2'] > df['EMALarga2']), 'cruce_medias2'] = 1  # Golden Cross (Compra)
-    df.loc[(df['prev_EMACorta2'] > df['prev_EMALarga2']) & (df['EMACorta2'] < df['EMALarga2']), 'cruce_medias2'] = -1 # Death Cross (Venta)
-
-    #drop columnas
-    df.drop({'prev_EMACorta2','prev_EMALarga2'}, axis=1, inplace=True)
-
-    print(f"===>{ticker}:", df.shape[0])
-
-
-    #===ULTIMO CRUCE===
-    #==CANAL ALCISTA==
-    df['cruce_mediasx'] = 0
-    #for ticker in tickers:
-    #Tendencias a la Alza
-    lstUltCruceB = df[(df['cruce_medias']==1)].tail(1).index
-    df.loc[lstUltCruceB,'cruce_mediasx'] = 1
-    if lstUltCruceB.size>0:
-        idxEvaluar = lstUltCruceB[0]
-        #Tendencias a la Alza
-        lstUltCruceA = df[(df['cruce_medias']==-1) & (df.index>=idxEvaluar)].index
-        df.loc[lstUltCruceA,'cruce_mediasx'] = -1
-
-    #drop columnas
-    df.drop({'cruce_medias'}, axis=1, inplace=True)
-    df = df.rename(columns={'cruce_mediasx': 'cruce_medias'}) 
-
-    #==CANAL BAJISTA==
-    df['cruce_mediasx'] = 0
-    #for ticker in tickers:
-    #Tendencias a la Baja
-    lstUltCruceB = df[(df['cruce_medias2']==-1)].tail(1).index
-    df.loc[lstUltCruceB,'cruce_mediasx'] = -1
-    if lstUltCruceB.size>0:
-        idxEvaluar = lstUltCruceB[0]
-        #Tendencias a la Alza
-        lstUltCruceA = df[(df['cruce_medias2']==1) & (df.index>=idxEvaluar)].index
-        df.loc[lstUltCruceA,'cruce_mediasx'] = 1
-
-    #print("===> cantidad cruce alcista:", df[(df['cruce_medias']==1)].shape[0])
-    #print("===> cantidad cruce bajista:", df[(df['cruce_medias2']==-1)].shape[0])
-
-    #drop columnas
-    df.drop({'cruce_medias2'}, axis=1, inplace=True)
-    df = df.rename(columns={'cruce_mediasx': 'cruce_medias2'})
-
-
-    #Leer el archivo de PREDICCION DE STRIKE
-    #Archivo anterior
-    ruta_archivo=f'{path_folder}/data/prediccion_strike.txt'
-    if os.path.exists(ruta_archivo):
-        # Cargar el archivo
-        df_strike_pred_old = pd.read_csv(ruta_archivo, sep='\t')
-        print("Archivo cargado correctamente.")
-    else:
-        # Crear un DataFrame vacío
-        df_strike_pred_old = pd.DataFrame()
-        print("Archivo no existe. Se creó un DataFrame vacío.")
-
-    # Tabla que se mostrara en la APP como sugerencia de strike para opciones financieras
-    #df_strike_pred_old[df_strike_pred_old['semana']=='s1']
-
-
-    #Revisar si la seleccion del ticket es a la ALZA o a la BAJA
-    ticker_alza = df_casos[df_casos["Tag"]=="long"].shape[0]
-    ticker_baja = df_casos[df_casos["Tag"]=="short"].shape[0]
-
-    now = datetime.utcnow()
-
-    if ticker_alza>0:
-        #=== OBTENCION DE CASOS ALCISTAS===
-        df_casos_alza = pd.DataFrame()
-        df_casos_alza = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "long", "ALZA")
-        print("Casos ALZA:",df_casos_alza.shape[0])
-        if df_casos_alza.shape[0]>0:
-            print("Casos abiertos ALZA:",df_casos_alza[np.isnan(df_casos_alza["ExitTime"])].shape[0])
-            df_casos_abiertos_alza = df_casos_alza[np.isnan(df_casos_alza["ExitTime"])]
-            if (df_casos_abiertos_alza.shape[0]>0):
-                for i,row in df_casos_abiertos_alza.iterrows():
-                    # Verificar si la fecha de entrada es de hoy
-                    # Dejamos solo hasta la hora
-
-                    print("type EntryTime:", type(row["EntryTime"]), ", EntryTime:",row["EntryTime"])
-                    
-                    dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)                    
-                    dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)
-                    print ("===== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
-
-                    #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
-                    # Calcular diferencia
-                    diff = (dt1_hour - dt2_hour).total_seconds() / 3600  # diferencia en horas
-                    print ("DIFERENCIA HORAS:", diff)
-                    if 0<dt1_hour.hour<=9:
-                        hor_rango=6
-                    else:
-                        hor_rango=2
-
-                    if 0 <= diff <= hor_rango: #HORAS MENOR AL RANGO HORARIO
-                        print("===PASO HORAS===")
-                        cantidad=1
-                        precio = 0
-                        right="C"
-                        fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S")                
-                        print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
-
-                        filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='long'")
-                        mov_calculado = np.float64(filtro.iloc[0]["strike_price_q3"])
-                        print("--- Alza semana:", filtro.shape[0],", dato:", mov_calculado)
-                        strike_calculado = Decimal(str(mov_calculado))
-                        #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
-                        # Long CALL esperando +strike_calculado USD de movimiento
-                        
-                        order_call = ibkr.run_strategy(
-                            symbol=ticker,
-                            side='CALL',
-                            expected_move=np.float64(strike_calculado), 
-                            qty_contracts=1,
-                            ip=ip,
-                            port=port,
-                            id_file=id_file,
-                            inicio_ts=inicio_ts,
-                            cant_trades=cant_trades,
-                            precio_max_prima=precio_max_prima)
-
-                        if order_call:
-                            print("====Datos de la posicion===")
-                            print("entry_price_per_share:",order_call["entry_price_per_share"])
-                            print("premium_total:",order_call["premium_total"])
-                            print("estimated_total_cost:",order_call["estimated_total_cost"])
-                            print("breakeven:",order_call["breakeven"])
-                            print("take_profit_price:",order_call["take_profit_price"])
-                            print("parent_orderId:",order_call["parent_orderId"])
-
-                            contract = Contract(order_put["contract"])
-                            financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
-
-                            # Guardar informacion relevante en base de datos dynamo
-                            table_name = table_posiciones_abiertas
-                            bd.create_item(table_name, {
-                                "conId": contract.conId,                                
-                                "ticker": contrato.symbol,
-                                "financial_instrument":financial_instrument,
-                                "cantidad": cantidad,
-                                "precio_entrada": None,
-                                "right":right,
-                                "stike_calculado": strike_calculado,
-                                "fecha_apertura": fecha_entrada,
-                                "fecha_registro": now,
-                                "inicio_ts": inicio_ts,
-                                "fecha_inicio_ts": None,
-                                "modo_entrada": 1, #1: bot
-                                "fecha_cierre": None
-                            })
-    
-    if ticker_baja>0:
-        #=== OBTENCION DE CASOS BAJISTAS===
-        df_casos_baja = pd.DataFrame()
-        df_casos_baja = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "short", "BAJA")
-        print("Casos BAJA:",df_casos_baja.shape[0])
-        if df_casos_baja.shape[0]>0:
-            print("Casos abiertos BAJA:",df_casos_baja[np.isnan(df_casos_baja["ExitTime"])].shape[0])
-            df_casos_abiertos_baja = df_casos_baja[np.isnan(df_casos_baja["ExitTime"])]
-            if (df_casos_abiertos_baja.shape[0]>0):
-                for i,row in df_casos_abiertos_baja.iterrows():
-                    # Verificar si la fecha de entrada es de hoy
-                    # Dejamos solo hasta la hora
-                    dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)
-                    dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)         
-                    #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
-                    print ("====== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
-                    # Calcular diferencia
-                    diff = (dt1_hour - dt2_hour).total_seconds() / 3600  # diferencia en horas
-                    print ("DIFERENCIA HORAS:", diff)
-                    if 0<dt1_hour.hour<=9:
-                        hor_rango=6
-                    else:
-                        hor_rango=1
-
-                    if 0 <= diff <= hor_rango: #HORAS MENOR A 5
-                        print("===PASO HORAS===")
-                        cantidad=1
-                        precio = 0
-                        right="P"
-                        fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S") 
-                        print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
-                        #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
-                        
-                        filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='short'")
-                        mov_calculado =   np.float64(filtro.iloc[0]["strike_price_q3"])
-                        print("----- Baja semana:", filtro.shape[0], ", dato:", mov_calculado, ", tipo:", type(mov_calculado))
-                        strike_calculado = Decimal(str(mov_calculado))
-
-                        
-                        # Long PUT esperando -strike_calculado USD de movimientoo                    
-                        order_put = ibkr.run_strategy(
-                            symbol=ticker, 
-                            side='PUT', 
-                            expected_move=np.float64(strike_calculado), 
-                            qty_contracts=1,
-                            ip=ip,
-                            port=port,
-                            id_file=id_file,
-                            inicio_ts=inicio_ts,
-                            cant_trades=cant_trades,
-                            precio_max_prima=precio_max_prima)
-                        if order_put:   
-                            print("====Datos de la posicion===")
-                            print("entry_price_per_share:",order_put["entry_price_per_share"])
-                            print("premium_total:",order_put["premium_total"])
-                            print("estimated_total_cost:",order_put["estimated_total_cost"])
-                            print("breakeven:",order_put["breakeven"])
-                            #print("take_profit_price:",order_put["take_profit_price"])
-                            #print("parent_orderId:",order_put["parent_orderId"])
-
-                            contrat = Contract(order_put["contract"])
-                            financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
-
-                            # Guardar informacion relevante en base de datos dynamo
-                            table_name = table_posiciones_abiertas
-                            bd.create_item(table_name, {
-                                "conId": contrato.conId,
-                                "financial_instrument":financial_instrument,
-                                "ticker": ticker,
-                                "cantidad": cantidad,
-                                "precio_entrada": precio,
-                                "right": right,
-                                "stike_calculado": strike_calculado,
-                                "fecha_apertura": fecha_entrada,
-                                "fecha_registro": now,
-                                "inicio_ts": inicio_ts,
-                                "fecha_inicio_ts": None,
-                                "modo_entrada": 1, #1: bot
-                                "fecha_cierre": None
-                            })
+            #IB_app2 = IB_Trading(log_file="alternative_errors2.txt", errors_verbose=True)
+            ib2 = IB()
+            clientId2 = clientId+1
+            ib2.connect(ip, port, clientId=clientId2)
+            #ib2.connect("127.0.0.1", 4002, clientId=998)
+            #ib2.connect("3.13.179.45", 4002, clientId=998)
+            #ib2.connect("127.0.0.1", 7497, clientId=998)
+            # Definir contrato dummy simple
+            contract = Stock('AAPL', 'SMART', 'USD')
             
+            # Enviar solicitud dummy
+            bars = ib2.reqHistoricalData(
+                contract,
+                endDateTime='',
+                durationStr='1 D',
+                barSizeSetting='1 day',
+                whatToShow='TRADES',
+                useRTH=True,
+                formatDate=1,
+                keepUpToDate=False
+            )
+            
+            # Cancelar la suscripción inmediatamente para evitar sobrecarga
+            time.sleep(2)
+            ib2.cancelHistoricalData(bars)
+            ib2.disconnect()
+            print("Propósito usHmds activado.")
 
-    # Detectar Cruces
-    ## cma = Cruce_MA(df=df, tendencia_rapida=9, tendencia_lenta=21)
-    # Detectar Casos a la ALZA
+            bars = ib.reqHistoricalData(contract=contrato, endDateTime="", durationStr=tiempo_descargado, barSizeSetting=marco_tiempo, whatToShow="TRADES", useRTH=False, formatDate=1)        
+            df_hist = util.df(bars)
+            df_hist.rename(columns={'date':'Datetime','open':'Open','high':'High', 'low':'Low','close':'Close','volume':'Volume'}, inplace=True)
+    
+        if (df_hist is None):
+            (f"===> NO SE PUDO DESCARGAR {ticker}:")
+            continue
+        else:
+            (f"===> Cantidad descargada {ticker}:", df_hist.shape[0])
+
+    
+        #Configurar dataframe
+        #==== ALZA ======#    
+        filtro = df_variable.query("Ticker==@ticker")
+        if filtro[filtro["Tag"]=="long"].shape[0]>0:
+            periodoCortoLong = filtro[filtro["Tag"]=="long"].iloc[0]["periodoCorto"]
+            periodoLargoLong = filtro[filtro["Tag"]=="long"].iloc[0]["periodoLargo"]
+        else:
+            periodoCortoLong = 20
+            periodoLargoLong = 40
+
+        #==== BAJA ======#
+        if filtro[filtro["Tag"]=="short"].shape[0]>0:
+            periodoCortoShort = filtro[filtro["Tag"]=="short"].iloc[0]["periodoCorto"]
+            periodoLargoShort = filtro[filtro["Tag"]=="short"].iloc[0]["periodoLargo"]
+        else:
+            periodoCortoShort = 20
+            periodoLargoShort = 40
+
+        print("PeriodoCortoLong:", periodoCortoLong,"periodoLargoLong:", periodoLargoLong, "periodoCortoShort:", periodoCortoShort,  "periodoLargoShort:", periodoLargoShort)
+
+        df = df_hist.copy()
+        # Quitar zona horaria
+        df['Datetime'] = df['Datetime'].dt.tz_localize(None)
+        df.sort_values(by=['Datetime'])
+
+        #print(df.tail(5))
+
+        df['EMACorta'] = df['Low'].ewm(span=periodoCortoLong, adjust=False).mean()
+        df.dropna(inplace=False)
+        df['EMALarga'] = df['Low'].ewm(span=periodoLargoLong, adjust=False).mean()
+        df.dropna(inplace=False)
+
+        df['EMACorta2'] = df['High'].ewm(span=periodoCortoShort, adjust=False).mean()
+        df.dropna(inplace=False)
+        df['EMALarga2'] = df['High'].ewm(span=periodoLargoShort, adjust=False).mean()
+        df.dropna(inplace=False)
+
+        # Calcular +DI, -DI y ADX (todo el DMI)
+        dmi = ta2.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], window=14)
+        df['plus_di'] = dmi.adx_pos()   # +DI
+        df['minus_di'] = dmi.adx_neg()  # -DI
+        df['adx'] = dmi.adx()           # ADX
+
+        #ATR indicador para Trailing Stop Loss
+        df['ATR'] = ta2.volatility.average_true_range(df['High'], df['Low'], df['Close'], window=14)
+        df['ATR2'] = df_limpiar(df)
+        df['EMA35_ATR'] = df['ATR2'].ewm(span=35, adjust=False).mean()
+        df.dropna(inplace=False)
+        
+        #=====AGREGAR PIVOTS=====
+        ord=20
+        ord2=10
+        ord3=7
+
+        # Aseguramos que estas columnas existen
+        pivot_cols = [
+            'pivotHigh', 'pivotLow', 'isPivot',
+            'pivotHigh2', 'pivotLow2', 'isPivot2',
+            'pivotHigh3', 'pivotLow3', 'isPivot3'
+        ]
+
+        for col in pivot_cols:
+            if col not in df.columns:
+                df[col] = np.nan
+
+        max_idx = argrelextrema(df['High'].values, np.greater, order=ord)[0]
+        min_idx = argrelextrema(df['Low'].values, np.less, order=ord)[0]
+
+        max_idx2 = argrelextrema(df['High'].values, np.greater, order=ord2)[0]
+        min_idx2 = argrelextrema(df['Low'].values, np.less, order=ord2)[0]
+
+        max_idx3 = argrelextrema(df['High'].values, np.greater, order=ord3)[0]
+        min_idx3 = argrelextrema(df['Low'].values, np.less, order=ord3)[0]
+
+        # Aplicar el cálculo solo a los índices en la lista
+        df.loc[df.index[max_idx], 'pivotHigh'] = df['High']+1e-3
+        df.loc[df.index[min_idx], 'pivotLow'] = df['Low']-(1e-3)
+        df.loc[df.index[max_idx], 'isPivot'] = 1
+        df.loc[df.index[min_idx], 'isPivot'] = 2
+
+        df.loc[df.index[max_idx2], 'pivotHigh2'] = df['High']+1e-3
+        df.loc[df.index[min_idx2], 'pivotLow2'] = df['Low']-(1e-3)
+        df.loc[df.index[max_idx2], 'isPivot2'] = 1
+        df.loc[df.index[min_idx2], 'isPivot2'] = 2
+
+        df.loc[df.index[max_idx3], 'pivotHigh3'] = df['High']+1e-3
+        df.loc[df.index[min_idx3], 'pivotLow3'] = df['Low']-(1e-3)
+        df.loc[df.index[max_idx3], 'isPivot3'] = 1
+        df.loc[df.index[min_idx3], 'isPivot3'] = 2
+        #=====FIN AGREGAR PIVOTS=====
+
+        #=====AGREGAR COLUMNAS DE CRUCE DE EMAs=====
+        #==CANAL ALCISTA==
+        df['prev_EMACorta'] = df['EMACorta'].shift(1)
+        df['prev_EMALarga'] = df['EMALarga'].shift(1)
+
+        #Cruce de medias
+        df['cruce_medias'] = 0
+        df.loc[(df['prev_EMACorta'] < df['prev_EMALarga']) & (df['EMACorta'] > df['EMALarga']), 'cruce_medias'] = 1  # Golden Cross (Compra)
+        df.loc[(df['prev_EMACorta'] > df['prev_EMALarga']) & (df['EMACorta'] < df['EMALarga']), 'cruce_medias'] = -1 # Death Cross (Venta)
+
+        #drop columnas
+        df.drop({'prev_EMACorta','prev_EMALarga'}, axis=1, inplace=True)
+
+        #==CANAL BAJISTA==#
+        df['prev_EMACorta2'] = df['EMACorta2'].shift(1)
+        df['prev_EMALarga2'] = df['EMALarga2'].shift(1)
+
+        #Cruce de medias
+        df['cruce_medias2'] = 0
+        df.loc[(df['prev_EMACorta2'] < df['prev_EMALarga2']) & (df['EMACorta2'] > df['EMALarga2']), 'cruce_medias2'] = 1  # Golden Cross (Compra)
+        df.loc[(df['prev_EMACorta2'] > df['prev_EMALarga2']) & (df['EMACorta2'] < df['EMALarga2']), 'cruce_medias2'] = -1 # Death Cross (Venta)
+
+        #drop columnas
+        df.drop({'prev_EMACorta2','prev_EMALarga2'}, axis=1, inplace=True)
+
+        print(f"===>{ticker}:", df.shape[0])
+
+
+        #===ULTIMO CRUCE===
+        #==CANAL ALCISTA==
+        df['cruce_mediasx'] = 0
+        #for ticker in tickers:
+        #Tendencias a la Alza
+        lstUltCruceB = df[(df['cruce_medias']==1)].tail(1).index
+        df.loc[lstUltCruceB,'cruce_mediasx'] = 1
+        if lstUltCruceB.size>0:
+            idxEvaluar = lstUltCruceB[0]
+            #Tendencias a la Alza
+            lstUltCruceA = df[(df['cruce_medias']==-1) & (df.index>=idxEvaluar)].index
+            df.loc[lstUltCruceA,'cruce_mediasx'] = -1
+
+        #drop columnas
+        df.drop({'cruce_medias'}, axis=1, inplace=True)
+        df = df.rename(columns={'cruce_mediasx': 'cruce_medias'}) 
+
+        #==CANAL BAJISTA==
+        df['cruce_mediasx'] = 0
+        #for ticker in tickers:
+        #Tendencias a la Baja
+        lstUltCruceB = df[(df['cruce_medias2']==-1)].tail(1).index
+        df.loc[lstUltCruceB,'cruce_mediasx'] = -1
+        if lstUltCruceB.size>0:
+            idxEvaluar = lstUltCruceB[0]
+            #Tendencias a la Alza
+            lstUltCruceA = df[(df['cruce_medias2']==1) & (df.index>=idxEvaluar)].index
+            df.loc[lstUltCruceA,'cruce_mediasx'] = 1
+
+        #print("===> cantidad cruce alcista:", df[(df['cruce_medias']==1)].shape[0])
+        #print("===> cantidad cruce bajista:", df[(df['cruce_medias2']==-1)].shape[0])
+
+        #drop columnas
+        df.drop({'cruce_medias2'}, axis=1, inplace=True)
+        df = df.rename(columns={'cruce_mediasx': 'cruce_medias2'})
+
+
+        #Leer el archivo de PREDICCION DE STRIKE
+        #Archivo anterior
+        ruta_archivo=f'{path_folder}/data/prediccion_strike.txt'
+        if os.path.exists(ruta_archivo):
+            # Cargar el archivo
+            df_strike_pred_old = pd.read_csv(ruta_archivo, sep='\t')
+            print("Archivo cargado correctamente.")
+        else:
+            # Crear un DataFrame vacío
+            df_strike_pred_old = pd.DataFrame()
+            print("Archivo no existe. Se creó un DataFrame vacío.")
+
+        # Tabla que se mostrara en la APP como sugerencia de strike para opciones financieras
+        #df_strike_pred_old[df_strike_pred_old['semana']=='s1']
+
+
+        #Revisar si la seleccion del ticket es a la ALZA o a la BAJA
+        ticker_alza = df_casos[df_casos["Tag"]=="long"].shape[0]
+        ticker_baja = df_casos[df_casos["Tag"]=="short"].shape[0]
+
+        now = datetime.utcnow()
+
+        if ticker_alza>0:
+            #=== OBTENCION DE CASOS ALCISTAS===
+            df_casos_alza = pd.DataFrame()
+            df_casos_alza = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "long", "ALZA")
+            print("Casos ALZA:",df_casos_alza.shape[0])
+            if df_casos_alza.shape[0]>0:
+                print("Casos abiertos ALZA:",df_casos_alza[np.isnan(df_casos_alza["ExitTime"])].shape[0])
+                df_casos_abiertos_alza = df_casos_alza[np.isnan(df_casos_alza["ExitTime"])]
+                if (df_casos_abiertos_alza.shape[0]>0):
+                    for i,row in df_casos_abiertos_alza.iterrows():
+                        # Verificar si la fecha de entrada es de hoy
+                        # Dejamos solo hasta la hora
+
+                        print("type EntryTime:", type(row["EntryTime"]), ", EntryTime:",row["EntryTime"])
+                        
+                        dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)                    
+                        dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)
+                        print ("===== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
+
+                        #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
+                        # Calcular diferencia
+                        diff = (dt1_hour - dt2_hour).total_seconds() / 3600  # diferencia en horas
+                        print ("DIFERENCIA HORAS:", diff)
+                        if 0<dt1_hour.hour<=9:
+                            hor_rango=6
+                        else:
+                            hor_rango=2
+
+                        if 0 <= diff <= hor_rango: #HORAS MENOR AL RANGO HORARIO
+                            print("===PASO HORAS===")
+                            cantidad=1
+                            precio = 0
+                            right="C"
+                            fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S")                
+                            print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
+
+                            filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='long'")
+                            mov_calculado = np.float64(filtro.iloc[0]["strike_price_q3"])
+                            print("--- Alza semana:", filtro.shape[0],", dato:", mov_calculado)
+                            strike_calculado = Decimal(str(mov_calculado))
+                            #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
+                            # Long CALL esperando +strike_calculado USD de movimiento
+                            
+                            order_call = ibkr.run_strategy(
+                                symbol=ticker,
+                                side='CALL',
+                                expected_move=np.float64(strike_calculado), 
+                                qty_contracts=1,
+                                ip=ip,
+                                port=port,
+                                id_file=id_file,
+                                inicio_ts=inicio_ts,
+                                cant_trades=cant_trades,
+                                precio_max_prima=precio_max_prima)
+
+                            if order_call:
+                                print("====Datos de la posicion===")
+                                print("entry_price_per_share:",order_call["entry_price_per_share"])
+                                print("premium_total:",order_call["premium_total"])
+                                print("estimated_total_cost:",order_call["estimated_total_cost"])
+                                print("breakeven:",order_call["breakeven"])
+                                print("take_profit_price:",order_call["take_profit_price"])
+                                print("parent_orderId:",order_call["parent_orderId"])
+
+                                contract = Contract(order_put["contract"])
+                                financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
+
+                                # Guardar informacion relevante en base de datos dynamo
+                                table_name = table_posiciones_abiertas
+                                bd.create_item(table_name, {
+                                    "conId": contract.conId,                                
+                                    "ticker": contrato.symbol,
+                                    "financial_instrument":financial_instrument,
+                                    "cantidad": cantidad,
+                                    "precio_entrada": None,
+                                    "right":right,
+                                    "stike_calculado": strike_calculado,
+                                    "fecha_apertura": fecha_entrada,
+                                    "fecha_registro": now,
+                                    "inicio_ts": inicio_ts,
+                                    "fecha_inicio_ts": None,
+                                    "modo_entrada": 1, #1: bot
+                                    "fecha_cierre": None
+                                })
+        
+        if ticker_baja>0:
+            #=== OBTENCION DE CASOS BAJISTAS===
+            df_casos_baja = pd.DataFrame()
+            df_casos_baja = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "short", "BAJA")
+            print("Casos BAJA:",df_casos_baja.shape[0])
+            if df_casos_baja.shape[0]>0:
+                print("Casos abiertos BAJA:",df_casos_baja[np.isnan(df_casos_baja["ExitTime"])].shape[0])
+                df_casos_abiertos_baja = df_casos_baja[np.isnan(df_casos_baja["ExitTime"])]
+                if (df_casos_abiertos_baja.shape[0]>0):
+                    for i,row in df_casos_abiertos_baja.iterrows():
+                        # Verificar si la fecha de entrada es de hoy
+                        # Dejamos solo hasta la hora
+                        dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)
+                        dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)         
+                        #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
+                        print ("====== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
+                        # Calcular diferencia
+                        diff = (dt1_hour - dt2_hour).total_seconds() / 3600  # diferencia en horas
+                        print ("DIFERENCIA HORAS:", diff)
+                        if 0<dt1_hour.hour<=9:
+                            hor_rango=6
+                        else:
+                            hor_rango=1
+
+                        if 0 <= diff <= hor_rango: #HORAS MENOR A 5
+                            print("===PASO HORAS===")
+                            cantidad=1
+                            precio = 0
+                            right="P"
+                            fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S") 
+                            print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
+                            #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
+                            
+                            filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='short'")
+                            mov_calculado =   np.float64(filtro.iloc[0]["strike_price_q3"])
+                            print("----- Baja semana:", filtro.shape[0], ", dato:", mov_calculado, ", tipo:", type(mov_calculado))
+                            strike_calculado = Decimal(str(mov_calculado))
+
+                            
+                            # Long PUT esperando -strike_calculado USD de movimientoo                    
+                            order_put = ibkr.run_strategy(
+                                symbol=ticker, 
+                                side='PUT', 
+                                expected_move=np.float64(strike_calculado), 
+                                qty_contracts=1,
+                                ip=ip,
+                                port=port,
+                                id_file=id_file,
+                                inicio_ts=inicio_ts,
+                                cant_trades=cant_trades,
+                                precio_max_prima=precio_max_prima)
+                            if order_put:   
+                                print("====Datos de la posicion===")
+                                print("entry_price_per_share:",order_put["entry_price_per_share"])
+                                print("premium_total:",order_put["premium_total"])
+                                print("estimated_total_cost:",order_put["estimated_total_cost"])
+                                print("breakeven:",order_put["breakeven"])
+                                #print("take_profit_price:",order_put["take_profit_price"])
+                                #print("parent_orderId:",order_put["parent_orderId"])
+
+                                contrat = Contract(order_put["contract"])
+                                financial_instrument = f"{contract.symbol} {contract.lastTradeDateOrContractMonth} {contract.strike} {contract.right}"
+
+                                # Guardar informacion relevante en base de datos dynamo
+                                table_name = table_posiciones_abiertas
+                                bd.create_item(table_name, {
+                                    "conId": contrato.conId,
+                                    "financial_instrument":financial_instrument,
+                                    "ticker": ticker,
+                                    "cantidad": cantidad,
+                                    "precio_entrada": precio,
+                                    "right": right,
+                                    "stike_calculado": strike_calculado,
+                                    "fecha_apertura": fecha_entrada,
+                                    "fecha_registro": now,
+                                    "inicio_ts": inicio_ts,
+                                    "fecha_inicio_ts": None,
+                                    "modo_entrada": 1, #1: bot
+                                    "fecha_cierre": None
+                                })
+                
+
+        # Detectar Cruces
+        ## cma = Cruce_MA(df=df, tendencia_rapida=9, tendencia_lenta=21)
+        # Detectar Casos a la ALZA
 
 time.sleep(30)
 #app.disconnect()
 # Cancelar la suscripción
 ib.cancelHistoricalData(bars)
 ib.disconnect
-        
-        # Revisar si se generó una señal en la última vela
-# =============================================================================
-#         if pd.notna(cma["Cruces"].iloc[-1]):
-#             # Obtener Dirección de la Señal Generada
-#             direccion = "BUY" if cma["Cruces"].iloc[-1] == 1 else "SELL"
-#             # Revisar si no hay posiciones u órdenes actuales
-#             existente = IB_app.existing_order_position(ticker=ticker)
-#             if not existente:
-#                 # Generar Orden
-#                 ejecutar_orden(IB_app=IB_app, ticker=ticker, contrato=contrato, direccion=direccion)
-#             else:
-#                 # Procesar Primero las Posiciones
-#                 procesar_posiciones(IB_app=IB_app, ticker=ticker, direccion=direccion, contrato=contrato)
-#                 # Procesar Órdenes Activas
-#                 procesar_ordenes(IB_app=IB_app, ticker=ticker, direccion=direccion, contrato=contrato)
-#                 
-#     # Definir horario de Nueva York (Para Cesar Ejecución)
-#     ny = pytz.timezone("America/New_York")
-#     hora_ny = datetime.now(tz=ny)
-#     hora_ny = hora_ny.replace(hour=15, minute=58, second=0, microsecond=0)
-#     horario_cierre = hora_ny.replace(hour=16, minute=0, second=0, microsecond=0)
-#     
-#     # Cerrar Posiciones si ya no se puede realizar otra iteración: Las posiciones se cerrarán 1 minuto antes de que el mercado cierre.
-#     if (hora_ny + timedelta(hours=1)) > horario_cierre:
-#         # Pausar la ejecución del código hasta un minuto antes del cierre del mercado
-#         hora_cierre_menos_un_minuto = horario_cierre - timedelta(minutes=1)
-#         tiempo_dormir = (hora_cierre_menos_un_minuto - hora_ny).total_seconds()
-#         time.sleep(tiempo_dormir)
-#         # Cerrar Todo
-#         IB_app.end_session(account="No. Cuenta", close_orders=True, close_positions=True)
-#         # Terminar Bucle
-#         break
-#     else:
-#         # Mostrar en consola
-#         print("Código dormirá por 1 hora...")
-#         time.sleep(60 * 60)
-# =============================================================================
-        
-# Esperar 1 minuto y desconectar al Servidor
-

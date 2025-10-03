@@ -72,6 +72,7 @@ match user:
         API_BASE="http://3.149.168.211:8000"
     case "usuario04":
         SCHEDULE_NAME="cron_scanner_usuario04"
+
 CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json"
 
 def get_schedule_state():
@@ -190,17 +191,14 @@ def fetch_alldatamkt():
 #     return []
 
 
-
-# Ruta donde se guardará la configuración
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # carpeta actual (pages)
-# ROOT_DIR = os.path.dirname(BASE_DIR)  # subimos un nivel (raíz del proyecto)
+#CARGAMOS EL USUARIO DE PARAM.JSON
 def cargar_usuario():
     """Carga parametros de Usuario"""
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
     return None
-
+#Funcion para cargar la configuracion 
 def cargar_config():
     """Carga la configuración de riesgo desde un archivo JSON si existe"""
     if os.path.exists(CONFIG_FILE2):
@@ -208,74 +206,56 @@ def cargar_config():
             return json.load(f)
     return None
 
-
+#---------------------
+# cargamos variables de usuario
+#---------------------
 usuarios = cargar_usuario()
 user_data=usuarios[user]
-st.write("Los datos de user data es: ",user_data)
+# st.write("Los datos de user data es: ",user_data)
 id=user_data.get("account_idpaper")
-st.write("El id es: ",id)
+# st.write("El id es: ",id)
 CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id}/config_riesgo.json"
 config = cargar_config()
 
+tipo_cuenta = config.get("tipo_cuenta") #TIPO DE CUENTA 
+if tipo_cuenta=="PAPER":
+    print("Valores de tipo de cuenta paper")
+    id_cuenta=user_data.get("account_idpaper")
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_paper")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_paper")
+    token=user_data.get("token_flexquery_paper")
+    queryid=user_data.get("id_flexquery_paper")
+    table_posiciones_abiertas=f"posiciones_abiertas_{id_cuenta}"
+elif tipo_cuenta=="LIVE":
+    print("Cargamos valores de live")
+    id_cuenta=user_data.get("account_idlive")
+    table_IBKR_Trades=user_data.get("table_IBKR_Trades_live")
+    table_IBKR_Account=user_data.get("table_IBKR_Account_live")
+    token=user_data.get("token_flexquery_live")
+    queryid=user_data.get("id_flexquery_live")
+    table_posiciones_abiertas=f"posiciones_abiertas_{id_cuenta}"
+
+acceskey=user_data.get("aws_access_key_id")
+secretaccess=user_data.get("aws_secret_access_key")
 
 
+# st.write("Los valores cargados son: ")
+# st.write("El id de la cuenta en la que estamos es: ",id_cuenta)
+# st.write("Table_IBKR_Trades: ",table_IBKR_Trades)
+# st.write("Table_IBKR_Account_paper: ",table_IBKR_Account)
+# st.write("Token: ",token)
+# st.write("Queryid: ",queryid)
+# st.write("talbe_psociones_abiertas: ",table_posiciones_abiertas)
+# st.write("Accesskey: ",acceskey)
+# st.write("SecrretAcces: ",secretaccess)
 
-st.title("📊 Dashboard - IBKR")
 
- # Cargar valores previos si existen
-config_prev = cargar_config()
-valTipo_cuenta_prev = config_prev.get("tipo_cuenta") if config_prev else ""
-valStatus_bot_prev= config_prev.get("status_bot") if config_prev else ""
-
-usuarios = cargar_usuario()
-config = cargar_config()
-tipo_cuenta = config.get("tipo_cuenta")
-
-token=""
-queryid =""
-table_IBKR_Trades=""
-table_IBKR_Account=""
-acceskey=""
-secretaccess=""
-
-if user in usuarios:
-    valores = usuarios[user]
-    print(f"Datos de {user}:")
-    for clave, valor in valores.items():
-        if tipo_cuenta=="PAPER":
-            if clave=="account_idpaper":
-                id_file=valor
-            if clave=="table_IBKR_Trades_paper":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_paper":
-                table_IBKR_Account=valor                  
-            table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"            
-        elif tipo_cuenta=="LIVE":
-            if clave=="account_idlive":
-                id_file=valor
-            if clave=="table_IBKR_Trades_live":
-                table_IBKR_Trades=valor
-            if clave=="table_IBKR_Account_live":
-                table_IBKR_Account=valor
-            table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
-        if clave=="aws_access_key_id":
-            acceskey=valor
-        if clave=="aws_secret_access_key":
-            secretaccess=valor
-        if clave=="token_flexquery":
-            token=valor
-        if clave=="id_flexquery":
-            queryid=valor        
-CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id_file}/config_riesgo.json"
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
                         #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
-
-#table = dynamodb.Table("IBKR_Trades")
-#tableAccounts = dynamodb.Table("IBKR_Account")
 
 table = dynamodb.Table(table_IBKR_Trades)
 tableAccounts = dynamodb.Table(table_IBKR_Account)
@@ -289,7 +269,7 @@ for indice, account in enumerate(itemsAccounts):
     tipo_cuenta = account["tipo_cuenta"]
     accountId = account["accountId"]
     name = account["name"]
-    if valTipo_cuenta_prev==tipo_cuenta:
+    if tipo_cuenta==tipo_cuenta:
         st.session_state.accountId = accountId
         st.session_state.name = name
 
@@ -343,6 +323,16 @@ def color_cel(val):
     else:
         return "color: black; background-color: lightgray"
     
+
+# ----------------------------
+# Colores personalizados
+# ----------------------------
+color_live = "#57cc99"    # Verde claro para LIVE
+color_base = "#001524"    # Fondo badges
+color_on = "#80ed99"      # Verde claro activado
+color_off = "#F05252"     # Rojo apagado
+color_text = "#FFFFFF"    # Texto blanco para contraste
+
 #Estilos
 st.markdown(
     """
@@ -412,31 +402,71 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ======================
-# Interfaz Web
-# ======================
 
 
-# Botones para cambiar modo
-colh1, colh2, colh3, colh4, _ = st.columns([1, 1.2, 2, 2, 2])
+estado_actual, _ = get_schedule_state()  # tomamos solo el estado
+st.write("Estado actual del bot:", estado_actual)
+estado_texto = "ACTIVADO" if estado_actual == "ENABLED" else "DESACTIVADO"
+# st.write("Estado del bot:", estado_texto)
+estado_color = color_on if estado_actual == "ENABLED" else color_off
 
+col1, col_sep1, col3, col_sep3, col4 = st.columns([2,0.1,3,0.1,3])
+with col1:
+    tipo_color = color_on if tipo_cuenta == "LIVE" else color_off
+    st.markdown(
+        f"<span style='color:{color_live}; font-weight:bold;'>Tipo Cuenta:</span> "
+        f"<span style='background-color:{color_base}; color:{tipo_color}; padding:3px 6px; border-radius:4px;'>{tipo_cuenta}</span>",
+        unsafe_allow_html=True
+    )
 
-with colh1:
-    if valTipo_cuenta_prev=="LIVE":
-        st.markdown(f":gray-badge[Tipo Cuenta:] :green-badge[{valTipo_cuenta_prev}]")
-    else:
-        st.markdown(f":gray-badge[Tipo Cuenta:] :red-badge[{valTipo_cuenta_prev}]")
-with colh2:
-    if valStatus_bot_prev=="ACTIVADO":
-        st.markdown(f":gray-badge[Estado BOT:] :green-badge[{valStatus_bot_prev}]")
-    else:
-        st.markdown(f":gray-badge[Estado BOT:] :red-badge[{valStatus_bot_prev}]")
-with colh3:    
-        st.markdown(f":gray-badge[👤 Cuenta:] :gray-badge[{st.session_state.accountId} - {st.session_state.name}]")
-with colh4:
-        st.markdown(f":gray-badge[Net Liquidation:] :gray-badge[{netLiquidation} {currency}]")
+with col_sep1:
+    st.markdown("<div style='border-left:1px solid #c7c7c7; height:24px;'></div>", unsafe_allow_html=True)
+
+with col3:
+    st.markdown(
+        f"<span style='color:{color_live}; font-weight:bold;'>👤 Cuenta:</span> "
+        # f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{st.session_state.accountId} - {st.session_state.name}</span>",
+        # unsafe_allow_html=True
+        f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{user} - {id_cuenta}</span>",
+             unsafe_allow_html=True
+    )
+
+with col_sep3:
+    st.markdown("<div style='border-left:1px solid #c7c7c7; height:24px;'></div>", unsafe_allow_html=True)
+
+with col4:
+    st.markdown(
+        f"<span style='color:{color_live}; font-weight:bold;'>Net Liquidation:</span> "
+        f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{netLiquidation} {currency}</span>",
+        unsafe_allow_html=True
+    )
+st.markdown("<br>", unsafe_allow_html=True)  # <---- separador visual
+
+# ==== FILA ESTADO BOT + BOTONES ====
+col_estado, _ = st.columns([1, 1])  # usamos una sola columna grande
+
+with col_estado:
+    c1, c2, c3 = st.columns([2, 1, 1])  # texto + botones pegados
+    with c1:
+        st.markdown(
+            f"<span style='color:{color_live}; font-weight:bold;'>Estado bot:</span> "
+            f"<span style='background-color:{color_base}; color:{estado_color}; "
+            f"padding:3px 6px; border-radius:4px;'>{estado_texto}</span>",
+            unsafe_allow_html=True
+        )
+    with c2:
+        if st.button("▶ Encender", key="activar", help="Activar Scheduler"):
+            resultado = update_schedule_state("ENABLED")
+            st.success(f"{resultado}")
+            st.rerun()
+    with c3:
+        if st.button("⏹ Apagar", key="desactivar", help="Desactivar Scheduler"):
+            resultado = update_schedule_state("DISABLED")
+            st.warning(f"{resultado}")
+            st.rerun()
 
 st.markdown("---")
+
 
 tab1, tab2, tab3, tab4 = st.tabs(["📈 Portafolio", "🔄 Trades", "📑 Ordenes", "⚠️ Configuracion Y Gestion de Riesgo"])
 # ----------------------
@@ -951,7 +981,7 @@ with tab4:
     #url_trades="D:/data/backtesting/estadisticas_cba.txt"
     url_trades=f"{path_folder}/data/backtesting/estadisticas_cba.txt"
     # ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
-    ESTRATEGIAS_FILE=f"{path_folder}/config_gestion_riesgo/config_{id_file}/estrategias_seleccionadas.csv"
+    ESTRATEGIAS_FILE=f"{path_folder}/config_gestion_riesgo/config_{id}/estrategias_seleccionadas.csv"
 
     data = pd.read_csv(url_trades, sep='\t')
     # ----------- BARRA SUPERIOR -----------
@@ -965,16 +995,16 @@ with tab4:
             inicio_ts = st.number_input(
             "INICIO T.S (%)", 
             min_value=0.0, max_value=100.0, step=0.1, 
-            value=config_prev.get("inicio_ts", 0.0) if config_prev else 0.0
+            value=config.get("inicio_ts", 0.0) if config else 0.0
             )
             precio_max_prima = st.number_input(
                 "PRECIO MAX PRIMA ($)", 
                 min_value=0.0, step=0.1, 
-                value=config_prev.get("precio_max_prima", 0.0) if config_prev else 0.0
+                value=config.get("precio_max_prima", 0.0) if config else 0.0
             )
 
             opTipo_cuenta = ["PAPER", "LIVE"]
-            valTipo_cuenta_prev = config_prev.get("tipo_cuenta") if config_prev else ""
+            valTipo_cuenta_prev = config.get("tipo_cuenta") if config else ""
             #print("hito1:", valTipo_cuenta_prev)
 
             # obtener índice según el nombre
@@ -993,16 +1023,16 @@ with tab4:
             inv_sesion = st.number_input(
                 "INV. SESION ($)",   # 💵 ahora es monto en dólares
                 min_value=0.0, step=0.1, 
-                value=config_prev.get("inv_sesion", 0.0) if config_prev else 0.0
+                value=config.get("inv_sesion", 0.0) if config else 0.0
             )
             cant_trades = st.number_input(
                 "CANT. TRADES X DÍA", 
                 min_value=0, step=1, 
-                value=config_prev.get("cant_trades", 0) if config_prev else 0
+                value=config.get("cant_trades", 0) if config else 0
             )
 
             opStatus_bot = ["DESACTIVADO", "ACTIVADO"]
-            valStatus_bot_prev= config_prev.get("status_bot") if config_prev else ""
+            valStatus_bot_prev= config.get("status_bot") if config else ""
 
             # obtener índice según el nombre
             if valStatus_bot_prev in opStatus_bot:

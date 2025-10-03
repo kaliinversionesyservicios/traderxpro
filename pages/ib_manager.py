@@ -24,6 +24,8 @@ import script_crud as bd
 #------------------------
 # funciones
 #------------------------
+
+ny_tz = pytz.timezone("America/New_York")
 def cargar_usuario():
     """Carga parametros de Usuario"""
     if os.path.exists(CONFIG_FILE):
@@ -39,14 +41,15 @@ def cargar_config():
     return None
 
 
+
 #--------------------------
 # Variables para rutas
 #--------------------------
 path_file="/mnt/efs" #produccion
 # path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
-# user="carlosml0287"
-user="investyolanda1"
+user="carlosml0287"
+#user="investyolanda1"
 # user="Ventanilla39"
 # param_cuenta=int(sys.argv[1]) #0-PAPER 1-live
 param_cuenta=int(os.getenv("PARAM_CUENTA", "0"))  # por defecto 0 = PAPER
@@ -129,6 +132,16 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
+
+# # # Conexión a DynamoDB Local
+# dynamodb = boto3.resource(
+#     'dynamodb',
+#     endpoint_url="http://localhost:8000",  # colocar si es entorno local
+#     region_name="us-west-2",
+#     aws_access_key_id="fakeMyKeyId",
+#     aws_secret_access_key="fakeSecretAccessKey"
+# )
+
 # Cache en memoria
 cache_data = {"items": [], "last_update": None}
 
@@ -208,6 +221,28 @@ def clean_value(val):
 
 def clean_dict(d):
     return {k: clean_value(v) for k, v in d.items()}
+
+async def mercado_abierto(contract, usar_liquid=True):
+    print("h1 mercado_abierto")
+    details_list =await ib.reqContractDetailsAsync(contract)
+    details = details_list[0]
+    print("h2 mercado_abierto")
+    ahora = datetime.now(ny_tz)
+    print("ahora (NY):", ahora)
+
+    # elegir entre horario extendido (tradingHours) o solo RTH (liquidHours)
+    horarios_str = details.liquidHours if usar_liquid else details.tradingHours
+    horarios = horarios_str.split(";")
+
+    for h in horarios:
+        if "CLOSED" not in h:
+            inicio, fin = h.split("-")
+            inicio = ny_tz.localize(datetime.strptime(inicio, "%Y%m%d:%H%M"))
+            fin = ny_tz.localize(datetime.strptime(fin, "%Y%m%d:%H%M"))
+            print("inicio:", inicio, "fin:", fin)
+            if inicio <= ahora <= fin:
+                return True
+    return False
 
 # ----------------------
 # Endpoint HTTP: Posiciones abiertas
@@ -783,13 +818,16 @@ async def get_data_all():
                         #print("k:",k,",trailing_stop:", trailing_stop)
                         df_datamkt.loc[k, 'trailing_stop'] = trailing_stop
                 
-
                 if cnt_cerrar>0:
                     print("❌ Stop alcanzado, cerrando posición")
                     try:
-                        mensaje_cierre= await close_position(conId)
-                        print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
-                        #print(f"Debe cerrar:{ticker} - {conId}")
+                        cont = Stock(ticker, "SMART", "USD")
+                        valMercado = await mercado_abierto(cont,True)
+                        if valMercado == True:
+                            mensaje_cierre= await close_position(conId)
+                            print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
+                        else:
+                            print(f"Mercado Cerrado, debe cerrar:{ticker} - {conId}")
                     except (ValueError, TypeError) as e:
                         print("Error:", e)
                 
