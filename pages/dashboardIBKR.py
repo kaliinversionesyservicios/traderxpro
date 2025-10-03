@@ -313,6 +313,30 @@ else:
 
 
 
+#AQUI
+
+def check_ib_manager(base_url):
+    """Verifica si ib_manager responde en esta instancia"""
+    try:
+        resp = requests.get(f"{base_url}/positions", timeout=3)
+        if resp.status_code == 200:
+            return True, "Activo"
+        else:
+            return False, f"Error {resp.status_code}"
+    except Exception as e:
+        return False, f"No responde ({e.__class__.__name__})"
+
+st.subheader("📡 Estado IB Manager")
+
+ok, estado = check_ib_manager(API_BASE)
+
+if ok:
+    st.success(f"Instancia de {user} ✅ {estado}")
+else:
+    st.error(f"Instancia de {user} ❌ {estado}")
+#FIN AQUI
+
+
 #Estilo
 # Función para aplicar colores
 def color_cel(val):
@@ -981,7 +1005,7 @@ with tab4:
     #url_trades="D:/data/backtesting/estadisticas_cba.txt"
     url_trades=f"{path_folder}/data/backtesting/estadisticas_cba.txt"
     # ESTRATEGIAS_FILE = os.path.join(ROOT_DIR, "config_gestion_riesgo", "estrategias_seleccionadas.csv")
-    ESTRATEGIAS_FILE=f"{path_folder}/config_gestion_riesgo/config_{id}/estrategias_seleccionadas.csv"
+    ESTRATEGIAS_FILE=f"{path_folder}/config_gestion_riesgo/config_{id_cuenta}/estrategias_seleccionadas.csv"
 
     data = pd.read_csv(url_trades, sep='\t')
     # ----------- BARRA SUPERIOR -----------
