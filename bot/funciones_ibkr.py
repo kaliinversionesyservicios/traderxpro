@@ -10,9 +10,8 @@ import decimal as Decimal
 IB_CLIENT_ID = 502
 
 
-#path_folder="/mnt/efs" #Produccion
+path_folder="/mnt/efs" #Produccion
 # path_folder="D:/traderxpro/" #Desarrollo
-path_folder="/mnt/efs"
 
 
 MAX_DAYS_TO_EXPIRY = 8

@@ -52,8 +52,8 @@ if not st.session_state.usuario:
 #----------------------
 # VARIABLES GLOBALES
 #----------------------
-#path_folder="/mnt/efs" #PRODUCCION
-path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+path_folder="/mnt/efs" #PRODUCCION
+# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -63,8 +63,8 @@ ssm = boto3.client("ssm", region_name="us-east-2")
 match user:
     case "carlosml0287":
         SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
-        #API_BASE="http://3.13.179.45:8000"
-        API_BASE = "http://127.0.0.1:8000"
+        API_BASE="http://3.13.179.45:8000"
+        # API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
@@ -256,7 +256,7 @@ secretaccess=user_data.get("aws_secret_access_key")
 
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )

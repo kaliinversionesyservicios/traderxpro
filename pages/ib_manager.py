@@ -17,9 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
-from bot import script_crud as bd #Desarrollo
-#import script_crud as bd
+# sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+# from bot import script_crud as bd #Desarrollo
+import script_crud as bd
 
 #------------------------
 # funciones
@@ -40,13 +40,11 @@ def cargar_config():
             return json.load(f)
     return None
 
-
-
 #--------------------------
 # Variables para rutas
 #--------------------------
-#path_file="/mnt/efs" #produccion
-path_file = "D:/TraderEstrategias" #desarrollo carlos
+path_file="/mnt/efs" #produccion
+# path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
 user="carlosml0287"
 #user="investyolanda1"
@@ -128,7 +126,7 @@ print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 #BASE DE DATOS DYNAMODB
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )

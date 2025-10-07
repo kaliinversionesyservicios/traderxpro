@@ -15,9 +15,9 @@ param_cuenta=int(sys.argv[2]) #0 paper 1 live
 #user="carlosml0287" #configurar
 
 #variables globales
-#path_folder="/mnt/efs" #Produccion
-#path_folder="/bot_aws" #Desarrollo Linder
-path_folder="/traderxpro" #Desarrollo Carlos
+path_folder="/mnt/efs" #Produccion
+# path_folder="/bot_aws" #Desarrollo Linder
+# path_folder="/traderxpro" #Desarrollo Carlos
 
 #PRODUCCION
 CONFIG_FILE  = f"{path_folder}/config_gestion_riesgo/param.json"
@@ -94,14 +94,14 @@ table_nameAccount = table_IBKR_Account
 
 
 # === DynamoDB produccion===
-#dynamodb = boto3.resource("dynamodb-admin", region_name="us-east-1")
+#dynamodb = boto3.resource("dynamodb-admin", region_name="us-east-2")
 
 
 # ====== CONFIG DYNAMODB LOCAL ======
 dynamodb = boto3.resource(
     "dynamodb",
     #region_name="us-west-2",  # región dummy para local
-    endpoint_url="http://localhost:8000",  # URL DynamoDB local
+    # endpoint_url="http://localhost:8000",  # URL DynamoDB local
     region_name="us-east-2",  # región produccion
     aws_access_key_id=acceskey,
     aws_secret_access_key=secretaccess
