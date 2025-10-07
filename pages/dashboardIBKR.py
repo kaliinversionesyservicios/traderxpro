@@ -52,8 +52,8 @@ if not st.session_state.usuario:
 #----------------------
 # VARIABLES GLOBALES
 #----------------------
-path_folder="/mnt/efs" #PRODUCCION
-# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+#path_folder="/mnt/efs" #PRODUCCION
+path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -63,8 +63,8 @@ ssm = boto3.client("ssm", region_name="us-east-2")
 match user:
     case "carlosml0287":
         SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
-        API_BASE="http://3.13.179.45:8000"
-        # API_BASE = "http://127.0.0.1:8000"
+        #API_BASE="http://3.13.179.45:8000"
+        API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
@@ -256,7 +256,7 @@ secretaccess=user_data.get("aws_secret_access_key")
 
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -546,6 +546,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📈 Portafolio", "🔄 Trades", "📑 Ordene
 # ----------------------
 def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     #st.write(Tag)
+    print("graficar h1")
     dfpl.reset_index(drop=True, inplace=True)
     inc = dfpl.query("close>open")
     dec = dfpl.query("open>close")
@@ -569,6 +570,7 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     # Ocultar etiquetas X en el gráfico superior para que no se repitan
     p.xaxis.visible = False
 
+    print("graficar h2")
     p.segment("index", "high", "index","low",  color="black", line_width=1, source=dfpl)
     p.vbar(    
         x="index",
@@ -621,20 +623,22 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
             source=dfpl)
     
     # if Tag=="long":
-
+    print("graficar h3")
     cnt_iniTrade = dfpl[dfpl["inicioTrade"]==1]
-    cnt_ts = dfpl[(np.isnan(dfpl["trailing_stop"])==False)]
-    print ("carlosss cnt_ts:", cnt_ts.shape[0])
-    cnt_ts2 = dfpl[(dfpl.trailing_stop!=None)]
-    print ("carlosss cnt_ts:", cnt_ts2.shape[0])
+    print("graficar h4")
+    #cnt_ts = dfpl[(np.isnan(dfpl["trailing_stop"])==False)]
+    
+    #print ("carlosss cnt_ts:", cnt_ts.shape[0])
+    #cnt_ts2 = dfpl[(dfpl.trailing_stop!=None)]
+    #print ("carlosss cnt_ts:", cnt_ts2.shape[0])
 
-    #print (dfpl)
 
     if cnt_iniTrade.shape[0]>0:
         #i2 = dfpl[dfpl["inicioTrade"]==1].index[0]
         #fin2 = dfpl.index[-1]
         #print("i2:",i2)
         #print("i_fin2:", fin2)
+        print("graficar h6")
         p.line(
         x="index", 
         y="trailing_stop", 
@@ -644,22 +648,24 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
         source=dfpl)
         #source=dfpl[dfpl["trailing_stop"]!=None])
 
-        ts_now = (dfpl[["trailing_stop"]][(np.isnan(dfpl["trailing_stop"])==False)]).iloc[-1]["trailing_stop"]
-        print("ts_now:", ts_now)        
-        hTS=Span(location=ts_now,dimension='width', line_color='blue',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
-        
-        labeltS = Label(x=0,           # posición X (puedes ajustar según necesites)
-              y=ts_now,                # posición Y = ubicación de la línea
-              x_units='screen',        # relativo al ancho del gráfico
-              y_units='data',          # relativo a los datos (eje Y)
-              text=f"TS {ts_now}", # texto a mostrar
-              text_font_size="9pt",
-              text_color="blue",
-              background_fill_color="#efefef",
-              background_fill_alpha=0.7)
-        
-        p.renderers.extend([hTS])
-        p.add_layout(labeltS)
+        cnt_ts2 = dfpl[dfpl["trailing_stop"].notna()]
+        print ("carlosss cnt_ts:", cnt_ts2.shape[0])
+        if cnt_ts2.shape[0]>0:
+            ts_now = (dfpl[["trailing_stop"]][(np.isnan(dfpl["trailing_stop"])==False)]).iloc[-1]["trailing_stop"]
+            print("ts_now:", ts_now)        
+            hTS=Span(location=ts_now,dimension='width', line_color='blue',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
+            print("graficar h7")
+            labeltS = Label(x=0,           # posición X (puedes ajustar según necesites)
+                y=ts_now,                # posición Y = ubicación de la línea
+                x_units='screen',        # relativo al ancho del gráfico
+                y_units='data',          # relativo a los datos (eje Y)
+                text=f"TS {ts_now}", # texto a mostrar
+                text_font_size="9pt",
+                text_color="blue",
+                background_fill_color="#efefef",
+                background_fill_alpha=0.7)
+            p.renderers.extend([hTS])
+            p.add_layout(labeltS)
 
         inicio = (dfpl[(dfpl.inicioTrade==1)].index).tolist()[0]
         vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
@@ -674,6 +680,7 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
               background_fill_alpha=0.7)
         p.renderers.extend([vline])
         p.add_layout(labelInicio)
+        print("graficar h77")
     
     # else:        
     #     i2 = dfpl[dfpl["inicioTrade"]==1].index[0]
@@ -696,7 +703,7 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     
   
 
-    
+    print("graficar h8")
     
     #print("FECHA DATE:",type(dfpl["date"]))
     #print("FECHA DATE2:",type(dfpl["Datetime_str"]))
@@ -741,7 +748,7 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     p.renderers.extend([hPriceNow])
     p.add_layout(labelPriceNow)
        
-
+    print("graficar h9")
     p.add_tools(CrosshairTool(line_width=0.4, line_alpha=0.7))
     #p.add_tools(CrosshairTool([width,height]))
 
@@ -758,7 +765,7 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
         line_color="BarColor", 
         source=dfpl   
     )
-
+    print("graficar h10")
     volume.yaxis.axis_label="volume"
     volume.xaxis.major_label_overrides = {
         i: date.strftime('%b %d %T') for i, date in zip(dfpl.index, dfpl["date"])
@@ -768,9 +775,11 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     #stretch_both
     # make a grid
     #, height=300, width=500
+    print("graficar h11")
     grid = gridplot([[p],[volume]], sizing_mode="stretch_width")
     #st.bokeh_chart(fig, use_container_width=True)
     st.bokeh_chart(grid)
+    print("graficar h12")
 # ----------------------
 
 # ----------------------
@@ -960,7 +969,7 @@ with tab1:
                     df_datamkt2 = df_datamkt[df_datamkt["date"]>=hace_5_dias].copy()
                     print ("hito9")
                     graficar(df_datamkt2,"",tag, selected, periodoCorto, periodoLargo)
-
+                    print ("hito10")
                 except Exception as e:
                     st.warning(f"Error datos del mercado: {e}")
 
@@ -1013,9 +1022,42 @@ with tab2:
 # allordens_data = fetch_allorder()
 with tab3:
     st.subheader("Ordenes abiertas")
+    
     if ordens_data:
-        df_orders = pd.DataFrame(ordens_data)
-        st.dataframe(df_orders)
+        print("===ordens_data===")
+        print(ordens_data)        
+        #df_orders = pd.DataFrame(ordens_data)
+        #st.dataframe(df_orders)
+        for t in ordens_data:        
+            col3_1, col3_2, col3_3, col3_4, col3_5 , col3_6, col3_7, col3_8, col3_9, col3_10, col3_11= st.columns([1,1,1,1,1,1,1,1,1,1,1])
+            permId = t["permId"]
+            with col3_1:
+                st.write(permId)
+            with col3_2:
+                st.write(t["conId"])
+            with col3_3:
+                st.write(t["f_instrument"])
+            with col3_4:
+                st.write(t["action"])
+            with col3_5:
+                st.write(t["status"])            
+            with col3_6:
+                st.write(t["orderType"])
+            with col3_7:
+                st.write(t["totalQuantity"])
+            with col3_8:
+                st.write(t["lmtPrice"])
+            with col3_9:
+                st.write(t["tif"])
+            with col3_10:
+                st.write(t["permId"])
+            with col3_11:
+                if st.button("Cancelar", key=t["permId"]):
+                    try:
+                        requests.post(f"{API_BASE}/close_order/{permId}")
+                        st.success(f"Cerro el trade {ticker}")
+                    except Exception as e:
+                        st.warning(f"Error cerrando posición: {e}")
     else:
         st.info("No hay Ordenes abiertas")
 

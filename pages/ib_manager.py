@@ -17,9 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-# sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
-# from bot import script_crud as bd #Desarrollo
-import script_crud as bd
+sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+from bot import script_crud as bd #Desarrollo
+#import script_crud as bd
 
 #------------------------
 # funciones
@@ -45,8 +45,8 @@ def cargar_config():
 #--------------------------
 # Variables para rutas
 #--------------------------
-path_file="/mnt/efs" #produccion
-# path_file = "D:/TraderEstrategias" #desarrollo carlos
+#path_file="/mnt/efs" #produccion
+path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
 user="carlosml0287"
 #user="investyolanda1"
@@ -128,7 +128,7 @@ print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 #BASE DE DATOS DYNAMODB
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -427,19 +427,47 @@ async def get_order():
     await ib.reqAllOpenOrdersAsync()
     
     orders = ib.openOrders()
+    trades = ib.trades() 
 
+    print("===ordenes===")
     print(orders)
-    
+
+    print("=== TRADES BACK ===")
+    print(trades)
+    print("total items.",len(trades))
+
     data3 = []
-    for o in orders:
-        data3.append({
-            "permId":o.permId,            
-            "orderType":o.orderType,
-            "action":o.action,
-            "totalQuantity":o.totalQuantity,
-            "lmtPrice":o.lmtPrice,
-            "tif":o.tif
-        })
+    cnt= 0
+    for t in trades:
+        cnt=cnt+1
+        print("cnt:", cnt)
+        contract = t.contract
+        if contract.secType != 'OPT':
+            f_instrument =contract.localSymbol
+        d = datetime.strptime(contract.lastTradeDateOrContractMonth, "%Y%m%d")
+        month = d.strftime("%b")   # Oct
+        day = d.day
+        year = d.strftime("%y")    # 25
+        f_instrument = f"{contract.symbol} {month}{day}'{year} {contract.strike} {contract.right}"
+
+        if t.orderStatus.status not in ("Filled", "Cancelled", "ApiCancelled"):
+            data3.append({
+                "permId": t.orderStatus.permId, #o.permId,
+                "conId": t.contract.conId,
+                "f_instrument": f_instrument,
+                "action": t.order.action,
+                #"type": t.order.orderType,
+                #"price": t.order.lmtPrice,
+                #"qty": t.order.totalQuantity,
+                "status": t.orderStatus.status,
+                #"remaining": t.orderStatus.remaining,
+                #"account": t.order.account,
+                "orderType": t.order.orderType, #o.orderType,
+                #"action":t.order.action,
+                "totalQuantity":t.order.totalQuantity,
+                "lmtPrice":t.order.lmtPrice,
+                "tif":t.order.tif            
+                })
     return data3
 
 # ----------------------
@@ -577,6 +605,17 @@ async def close_position(conId: int):
         ib.placeOrder(pos[0].contract, order)
         return {"status": "ok", "message": f"Orden enviada para cerrar {conId}"}
     return {"status": "error", "message": "Ticker no encontrado"}
+
+# Endpoint para cerrar posición
+@app.post("/close_order/{permId}")
+async def close_order(permId: int):
+    orders = ib.openOrders()
+    ord = [p for p in orders if p.order.permId == permId]
+    if ord:
+        orden = ord[0].order
+        ib.cancelOrder(orden)        
+        return {"status": "ok", "message": f"Orden enviada para cerrar {permId}"}
+    return {"status": "error", "message": "Orden no encontrada"}
 
 # Endpoint obtener datos
 @app.get("/datamkt/{ticker}")
@@ -836,7 +875,7 @@ async def get_data_all():
         df_datamkt["date"] = df_datamkt["date"].dt.strftime("%Y-%m-%dT%H:%M:%S") #volver a cambiar tipo de dato por el JSON
         print("df_datamkt:", df_datamkt.shape[0])
 
-        print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]])
+        print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]].tail(40))
 
         if df_total.shape[0]<=0:
             df_total = df_datamkt
