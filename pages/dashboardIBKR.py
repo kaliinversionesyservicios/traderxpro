@@ -486,13 +486,13 @@ with col_sep_ib:
 with col_ib2:
     if st.button("🔄 Reiniciar", key="restart_ib", help="Reiniciar servicio IB Manager"):
         resultado = send_docker_command("sudo docker restart ib_manager_paper")
-        st.info("Reinicio enviado al servidor.")
+        st.info(resultado)
         st.rerun()
 
 with col_ib3:
     if st.button("⏹ Detener", key="stop_ib", help="Detener servicio IB Manager"):
         resultado = send_docker_command("sudo docker stop ib_manager_paper")
-        st.warning("Servicio detenido.")
+        st.warning(resultado)
         st.rerun()
 
 estado_actual, _ = get_schedule_state()  # tomamos solo el estado
