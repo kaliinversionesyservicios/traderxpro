@@ -60,17 +60,36 @@ client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBr
 ssm = boto3.client("ssm", region_name="us-east-2")
 #Verificar si existe un usuario
 
+#funcion para leer el horario en utc
+def leer_hora_utc():
+    now_utc=datetime.utcnow()
+    hour=now_utc.hour
+    minute=now_utc.minute
+    return hour,minute
+
+hora,minuto=leer_hora_utc()
 match user:
     case "carlosml0287":
-        SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
+        if hora== 13 and minuto>=30:
+            SCHEDULE_NAME="cron_scanner_bot_carlos_inicial_param_cero"
+        else:
+            SCHEDULE_NAME="cron_scanner_bot_carlos_secuencial_param_cero"
         API_BASE="http://3.13.179.45:8000"
         # API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
+        if hora== 13 and minuto>=30:
+            SCHEDULE_NAME="cron_scanner_bot_yolanda_inicial_param_cero"
+        else:
+            SCHEDULE_NAME="cron_scanner_bot_yolanda_secuencial_param_cero"
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
         API_BASE="http://3.140.173.63:8000"
         INSTANCE_ID="i-0ebd4e74d90835595"
     case "Ventanilla39":
+        if hora== 13 and minuto>=30:
+            SCHEDULE_NAME="cron_scanner_bot_elsy_inicial_param_cero"
+        else:
+            SCHEDULE_NAME="cron_scanner_bot_elsy_secuencial_param_cero"
         SCHEDULE_NAME="cron_scanner_bot_elsy"
         API_BASE="http://3.149.168.211:8000"
         INSTANCE_ID="i-0de59262800d37591"
@@ -209,20 +228,15 @@ def cargar_config():
 # cargamos variables de usuario
 #---------------------
 usuarios = cargar_usuario()
-st.write("Los usuarios leidos son: ")
 st.write(usuarios)
 user_data=usuarios[user]
-st.write("EL USUARIO DE DATA")
 st.write(user_data)
 # st.write("Los datos de user data es: ",user_data)
 id=user_data.get("account_idpaper")
-st.write("ID: ",id)
 # st.write("El id es: ",id)
 CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id}/config_riesgo.json"
-st.write("CONFIG_FILE_2 ",CONFIG_FILE2)
 
 config = cargar_config()
-st.write("configuracion: ",config)
 
 tipo_cuenta = config.get("tipo_cuenta") #TIPO DE CUENTA 
 if tipo_cuenta=="PAPER":

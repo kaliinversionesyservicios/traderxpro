@@ -47,7 +47,7 @@ path_file="/mnt/efs" #produccion
 # path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
 user="carlosml0287"
-#user="investyolanda1"
+# user="investyolanda1"
 # user="Ventanilla39"
 # param_cuenta=int(sys.argv[1]) #0-PAPER 1-live
 param_cuenta=int(os.getenv("PARAM_CUENTA", "0"))  # por defecto 0 = PAPER
