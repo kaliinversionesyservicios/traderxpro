@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-# Configuración de conexión desarrollo 
+#Configuración de conexión desarrollo 
 # dynamodb = boto3.resource(
 #     'dynamodb',
 #     endpoint_url="http://localhost:8000",  # Cambiar a None si usas AWS real
@@ -10,12 +10,12 @@ from botocore.exceptions import ClientError
 
 
 # Configuración de conexión produccion
-# dynamodb = boto3.resource( 
-#     'dynamodb',
-#     region_name="us-east-2",
-#     aws_access_key_id="AKIAYCUP6PDKIQ25PGUY",
-#     aws_secret_access_key="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"
-# )
+dynamodb = boto3.resource( 
+    'dynamodb',
+    region_name="us-east-2",
+    aws_access_key_id="AKIAYCUP6PDKIQ25PGUY",
+    aws_secret_access_key="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"
+)
 
 
 # ========================

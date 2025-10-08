@@ -47,9 +47,9 @@ def cargar_config():
 #--------------------------
 # Variables
 #--------------------------
-path_folder="/mnt/efs" #produccion
+# path_folder="/mnt/efs" #produccion
 # path_folder="/bot_aws" #Desarrollo
-# path_folder= "D:/TraderEstrategias" #Desarrollo carlos
+path_folder= "D:/TraderEstrategias" #Desarrollo carlos
 user="carlosml0287"
 # user="investyolanda1"
 # user="Ventanilla39"
