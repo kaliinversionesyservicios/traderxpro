@@ -82,7 +82,6 @@ match user:
             SCHEDULE_NAME="cron_scanner_bot_yolanda_inicial_param_cero"
         else:
             SCHEDULE_NAME="cron_scanner_bot_yolanda_secuencial_param_cero"
-        SCHEDULE_NAME="cron_scanner_bot_yolanda"
         API_BASE="http://3.140.173.63:8000"
         INSTANCE_ID="i-0ebd4e74d90835595"
     case "Ventanilla39":
@@ -90,7 +89,6 @@ match user:
             SCHEDULE_NAME="cron_scanner_bot_elsy_inicial_param_cero"
         else:
             SCHEDULE_NAME="cron_scanner_bot_elsy_secuencial_param_cero"
-        SCHEDULE_NAME="cron_scanner_bot_elsy"
         API_BASE="http://3.149.168.211:8000"
         INSTANCE_ID="i-0de59262800d37591"
     case "usuario04":
@@ -207,7 +205,7 @@ def fetch_alldatamkt():
 # CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
 CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
 
-st.write("la configuracion es: ",CONFIG_FILE)
+# st.write("la configuracion es: ",CONFIG_FILE)
 
 #CARGAMOS EL USUARIO DE PARAM.JSON
 def cargar_usuario():
@@ -228,9 +226,7 @@ def cargar_config():
 # cargamos variables de usuario
 #---------------------
 usuarios = cargar_usuario()
-st.write(usuarios)
 user_data=usuarios[user]
-st.write(user_data)
 # st.write("Los datos de user data es: ",user_data)
 id=user_data.get("account_idpaper")
 # st.write("El id es: ",id)
@@ -496,7 +492,6 @@ with col_ib3:
         st.rerun()
 
 estado_actual, _ = get_schedule_state()  # tomamos solo el estado
-st.write("Estado actual del bot:", estado_actual)
 estado_texto = "ACTIVADO" if estado_actual == "ENABLED" else "DESACTIVADO"
 # st.write("Estado del bot:", estado_texto)
 estado_color = color_on if estado_actual == "ENABLED" else color_off
@@ -518,7 +513,7 @@ with col3:
         f"<span style='color:{color_live}; font-weight:bold;'>👤 Cuenta:</span> "
         # f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{st.session_state.accountId} - {st.session_state.name}</span>",
         # unsafe_allow_html=True
-        f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{user} - {id_cuenta}</span>",
+        f"<span style='background-color:{color_base}; color:{color_text}; padding:3px 6px; border-radius:4px;'>{name} - {id_cuenta}</span>",
              unsafe_allow_html=True
     )
 
