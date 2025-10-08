@@ -52,8 +52,8 @@ if not st.session_state.usuario:
 #----------------------
 # VARIABLES GLOBALES
 #----------------------
-#path_folder="/mnt/efs" #PRODUCCION
-path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+path_folder="/mnt/efs" #PRODUCCION
+# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -63,8 +63,8 @@ ssm = boto3.client("ssm", region_name="us-east-2")
 match user:
     case "carlosml0287":
         SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
-        #API_BASE="http://3.13.179.45:8000"
-        API_BASE = "http://127.0.0.1:8000"
+        API_BASE="http://3.13.179.45:8000"
+        # API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
@@ -1153,7 +1153,7 @@ with tab4:
                 value=config.get("MIN_DAYS_TO_EXPIRY", 0) if config else 0
             ) 
 
-            cant_minvcto = st.number_input(
+            cant_maxvcto = st.number_input(
                 "MAX DÍAS VCTO:", 
                 min_value=3, step=1, 
                 value=config.get("MAX_DAYS_TO_EXPIRY", 0) if config else 0
@@ -1169,7 +1169,8 @@ with tab4:
             "cant_trades": cant_trades,
             "tipo_cuenta": selTipo_cuenta,
             "multATR": multATR,
-            "cant_minvcto": cant_minvcto
+            "MIN_DAYS_TO_EXPIRY": cant_minvcto,
+            "MAX_DAYS_TO_EXPIRY":cant_maxvcto
         }
 
         guardar_configuracion_riesgo(config)
