@@ -344,12 +344,16 @@ def check_ib_manager(base_url):
         return False, f"No responde ({e.__class__.__name__})"
 
 def send_docker_command(command):
-    response = ssm.send_command(
-        InstanceIds=[INSTANCE_ID],
-        DocumentName="AWS-RunShellScript",
-        Parameters={"commands": [command]}
-    )
-    return response
+    try:
+        response = ssm.send_command(
+            InstanceIds=[INSTANCE_ID],
+            DocumentName="AWS-RunShellScript",
+            Parameters={"commands": [command]},
+        )
+        command_id = response["Command"]["CommandId"]
+        return f"Comando enviado correctamente (ID: {command_id})"
+    except Exception as e:
+        return f"Error al enviar comando: {e}"
 
 # st.subheader("📡 Estado Stop Loss")
 
