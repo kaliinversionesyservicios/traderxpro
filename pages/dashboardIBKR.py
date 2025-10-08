@@ -188,6 +188,7 @@ def fetch_alldatamkt():
 # CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
 CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
 
+st.write("la configuracion es: ",CONFIG_FILE)
 
 #CARGAMOS EL USUARIO DE PARAM.JSON
 def cargar_usuario():
@@ -208,12 +209,18 @@ def cargar_config():
 # cargamos variables de usuario
 #---------------------
 usuarios = cargar_usuario()
+st.write("Los usuarios leidos son: ")
+st.write(usuarios)
 user_data=usuarios[user]
+st.write("EL USUARIO DE DATA")
+st.write(user_data)
 # st.write("Los datos de user data es: ",user_data)
 id=user_data.get("account_idpaper")
+st.write("ID: ",id)
 # st.write("El id es: ",id)
 CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id}/config_riesgo.json"
 config = cargar_config()
+st.write("configuracion: ",config)
 
 tipo_cuenta = config.get("tipo_cuenta") #TIPO DE CUENTA 
 if tipo_cuenta=="PAPER":
