@@ -185,8 +185,8 @@ def fetch_alldatamkt():
         st.warning(f"Error fetching alldatamark: {e}")
     return []
 
-CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
-#CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
+# CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
+CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
 
 
 #CARGAMOS EL USUARIO DE PARAM.JSON
