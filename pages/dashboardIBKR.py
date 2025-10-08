@@ -52,8 +52,8 @@ if not st.session_state.usuario:
 #----------------------
 # VARIABLES GLOBALES
 #----------------------
-path_folder="/mnt/efs" #PRODUCCION
-# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+#path_folder="/mnt/efs" #PRODUCCION
+path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -63,8 +63,8 @@ ssm = boto3.client("ssm", region_name="us-east-2")
 match user:
     case "carlosml0287":
         SCHEDULE_NAME="cron_scanner_bot_carlos_param_0"
-        API_BASE="http://3.13.179.45:8000"
-        # API_BASE = "http://127.0.0.1:8000"
+        #API_BASE="http://3.13.179.45:8000"
+        API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         SCHEDULE_NAME="cron_scanner_bot_yolanda"
@@ -77,7 +77,7 @@ match user:
     case "usuario04":
         SCHEDULE_NAME="cron_scanner_usuario04"
 
-CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json"
+
 
 def get_schedule_state():
     try:
@@ -185,14 +185,8 @@ def fetch_alldatamkt():
         st.warning(f"Error fetching alldatamark: {e}")
     return []
 
-# def fetch_allorder():
-#     try:
-#         resp = requests.get(f"{API_BASE}/allorder", timeout=2)
-#         if resp.status_code == 200:
-#             return resp.json()
-#     except Exception as e:
-#         st.warning(f"Error fetching order: {e}")
-#     return []
+CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
+#CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
 
 
 #CARGAMOS EL USUARIO DE PARAM.JSON
@@ -1135,6 +1129,12 @@ with tab4:
                             placeholder="Select tip Account"
             )
 
+            multATR = st.number_input(
+                "MULT. ATR:", 
+                min_value=0.5, max_value=2.6, step=0.1, 
+                value=config.get("multATR", 0) if config else 0
+            )
+
         with col2:
             inv_sesion = st.number_input(
                 "INV. SESION ($)",   # 💵 ahora es monto en dólares
@@ -1142,25 +1142,22 @@ with tab4:
                 value=config.get("inv_sesion", 0.0) if config else 0.0
             )
             cant_trades = st.number_input(
-                "CANT. TRADES X DÍA", 
+                "CNT. TRADES X DÍA", 
                 min_value=0, step=1, 
                 value=config.get("cant_trades", 0) if config else 0
             )
 
-            opStatus_bot = ["DESACTIVADO", "ACTIVADO"]
-            valStatus_bot_prev= config.get("status_bot") if config else ""
+            cant_minvcto = st.number_input(
+                "MIN DÍAS VCTO:", 
+                min_value=2, step=1, 
+                value=config.get("MIN_DAYS_TO_EXPIRY", 0) if config else 0
+            ) 
 
-            # obtener índice según el nombre
-            if valStatus_bot_prev in opStatus_bot:
-                indexStatus = opStatus_bot.index(valStatus_bot_prev)
-            else:
-                indexStatus = 0  # fallback si no existe
-
-            selStatus_bot = st.selectbox("Estado BOT",
-                            opStatus_bot,
-                            index=indexStatus,
-                            placeholder="Select Status Bot"
-            )
+            cant_minvcto = st.number_input(
+                "MAX DÍAS VCTO:", 
+                min_value=3, step=1, 
+                value=config.get("MAX_DAYS_TO_EXPIRY", 0) if config else 0
+            )          
 
 
         submitted = st.form_submit_button("✅ Guardar Configuración", use_container_width=True)
@@ -1171,7 +1168,8 @@ with tab4:
             "precio_max_prima": precio_max_prima,
             "cant_trades": cant_trades,
             "tipo_cuenta": selTipo_cuenta,
-            "status_bot": selStatus_bot
+            "multATR": multATR,
+            "cant_minvcto": cant_minvcto
         }
 
         guardar_configuracion_riesgo(config)

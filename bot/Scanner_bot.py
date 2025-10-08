@@ -47,9 +47,9 @@ def cargar_config():
 #--------------------------
 # Variables
 #--------------------------
-path_folder="/mnt/efs" #produccion
+# path_folder="/mnt/efs" #produccion
 # path_folder="/bot_aws" #Desarrollo
-# path_folder= "D:/TraderEstrategias" #Desarrollo carlos
+path_folder= "D:/TraderEstrategias" #Desarrollo carlos
 user="carlosml0287"
 # user="investyolanda1"
 # user="Ventanilla39"
@@ -99,6 +99,8 @@ else:
 table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
 inicio_ts = config.get("inicio_ts")
 cant_trades=config.get("cant_trades")
+MIN_DAYS_TO_EXPIRY=config.get("MIN_DAYS_TO_EXPIRY")
+MAX_DAYS_TO_EXPIRY=config.get("MAX_DAYS_TO_EXPIRY")
 precio_max_prima=config.get("precio_max_prima")
 print("Valores")
 print("ip: ",ip)
@@ -271,7 +273,24 @@ print("cantidad de tickers:", df_tickers.shape[0])
 #while True:"""
 # Revisar si se han generado señales para cada ticker
 cont = Stock('AAPL', "SMART", "USD")
-valMercado = mercado_abierto(cont,True)
+
+#Leer el archivo de PREDICCION DE STRIKE
+#Archivo anterior
+ruta_archivo=f'{path_folder}/data/prediccion_strike.txt'
+if os.path.exists(ruta_archivo):
+    # Cargar el archivo
+    df_strike_pred_old = pd.read_csv(ruta_archivo, sep='\t')
+    print("Archivo cargado correctamente.")
+else:
+    # Crear un DataFrame vacío
+    df_strike_pred_old = pd.DataFrame()
+    print("Archivo no existe. Se creó un DataFrame vacío.")
+
+# Tabla que se mostrara en la APP como sugerencia de strike para opciones financieras
+#df_strike_pred_old[df_strike_pred_old['semana']=='s1']
+
+valMercado = mercado_abierto(cont,True) #Carlos Habilitar despues de las pruebas
+#valMercado = True
 if valMercado==True:
     for i,row in df_tickers.iterrows():
         ticker = row["Ticker"]
@@ -342,7 +361,7 @@ if valMercado==True:
             periodoCortoShort = 20
             periodoLargoShort = 40
 
-        print("PeriodoCortoLong:", periodoCortoLong,"periodoLargoLong:", periodoLargoLong, "periodoCortoShort:", periodoCortoShort,  "periodoLargoShort:", periodoLargoShort)
+        #print("PeriodoCortoLong:", periodoCortoLong,"periodoLargoLong:", periodoLargoLong, "periodoCortoShort:", periodoCortoShort,  "periodoLargoShort:", periodoLargoShort)
 
         df = df_hist.copy()
         # Quitar zona horaria
@@ -440,7 +459,7 @@ if valMercado==True:
         #drop columnas
         df.drop({'prev_EMACorta2','prev_EMALarga2'}, axis=1, inplace=True)
 
-        print(f"===>{ticker}:", df.shape[0])
+        #print(f"===>{ticker}:", df.shape[0])
 
 
         #===ULTIMO CRUCE===
@@ -480,22 +499,6 @@ if valMercado==True:
         df = df.rename(columns={'cruce_mediasx': 'cruce_medias2'})
 
 
-        #Leer el archivo de PREDICCION DE STRIKE
-        #Archivo anterior
-        ruta_archivo=f'{path_folder}/data/prediccion_strike.txt'
-        if os.path.exists(ruta_archivo):
-            # Cargar el archivo
-            df_strike_pred_old = pd.read_csv(ruta_archivo, sep='\t')
-            print("Archivo cargado correctamente.")
-        else:
-            # Crear un DataFrame vacío
-            df_strike_pred_old = pd.DataFrame()
-            print("Archivo no existe. Se creó un DataFrame vacío.")
-
-        # Tabla que se mostrara en la APP como sugerencia de strike para opciones financieras
-        #df_strike_pred_old[df_strike_pred_old['semana']=='s1']
-
-
         #Revisar si la seleccion del ticket es a la ALZA o a la BAJA
         ticker_alza = df_casos[df_casos["Tag"]=="long"].shape[0]
         ticker_baja = df_casos[df_casos["Tag"]=="short"].shape[0]
@@ -506,7 +509,7 @@ if valMercado==True:
             #=== OBTENCION DE CASOS ALCISTAS===
             df_casos_alza = pd.DataFrame()
             df_casos_alza = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "long", "ALZA")
-            print("Casos ALZA:",df_casos_alza.shape[0])
+            #print("Casos ALZA:",df_casos_alza.shape[0])
             if df_casos_alza.shape[0]>0:
                 print("Casos abiertos ALZA:",df_casos_alza[np.isnan(df_casos_alza["ExitTime"])].shape[0])
                 df_casos_abiertos_alza = df_casos_alza[np.isnan(df_casos_alza["ExitTime"])]
@@ -515,11 +518,11 @@ if valMercado==True:
                         # Verificar si la fecha de entrada es de hoy
                         # Dejamos solo hasta la hora
 
-                        print("type EntryTime:", type(row["EntryTime"]), ", EntryTime:",row["EntryTime"])
+                        #print("type EntryTime:", type(row["EntryTime"]), ", EntryTime:",row["EntryTime"])
                         
                         dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)                    
                         dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)
-                        print ("===== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
+                        #print ("===== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
 
                         #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
                         # Calcular diferencia
@@ -531,16 +534,16 @@ if valMercado==True:
                             hor_rango=2
 
                         if 0 <= diff <= hor_rango: #HORAS MENOR AL RANGO HORARIO
-                            print("===PASO HORAS===")
+                            #print("===PASO HORAS===")
                             cantidad=1
                             precio = 0
                             right="C"
                             fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S")                
-                            print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
+                            #print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
 
                             filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='long'")
                             mov_calculado = np.float64(filtro.iloc[0]["strike_price_q3"])
-                            print("--- Alza semana:", filtro.shape[0],", dato:", mov_calculado)
+                            #print("--- Alza semana:", filtro.shape[0],", dato:", mov_calculado)
                             strike_calculado = Decimal(str(mov_calculado))
                             #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
                             # Long CALL esperando +strike_calculado USD de movimiento
@@ -555,7 +558,10 @@ if valMercado==True:
                                 id_file=id_file,
                                 inicio_ts=inicio_ts,
                                 cant_trades=cant_trades,
-                                precio_max_prima=precio_max_prima)
+                                precio_max_prima=precio_max_prima,
+                                min_days_vcto = MIN_DAYS_TO_EXPIRY,
+                                max_days_vcto = MAX_DAYS_TO_EXPIRY
+                                )
 
                             if order_call:
                                 print("====Datos de la posicion===")
@@ -591,7 +597,7 @@ if valMercado==True:
             #=== OBTENCION DE CASOS BAJISTAS===
             df_casos_baja = pd.DataFrame()
             df_casos_baja = ana_tecnico.obtener_casos(df, df_strike_pred_old, df_variable, ticker, "short", "BAJA")
-            print("Casos BAJA:",df_casos_baja.shape[0])
+            #print("Casos BAJA:",df_casos_baja.shape[0])
             if df_casos_baja.shape[0]>0:
                 print("Casos abiertos BAJA:",df_casos_baja[np.isnan(df_casos_baja["ExitTime"])].shape[0])
                 df_casos_abiertos_baja = df_casos_baja[np.isnan(df_casos_baja["ExitTime"])]
@@ -602,7 +608,7 @@ if valMercado==True:
                         dt1_hour = ny_time.replace(minute=0, second=0, microsecond=0)
                         dt2_hour = row["EntryTime"].replace(tzinfo=ny_tz).replace(minute=0, second=0, microsecond=0)         
                         #if (ny_time.date() == row["EntryTime"].date()): #HABILITAR DESPUES
-                        print ("====== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
+                        #print ("====== HORAS EVALUAR, hora1:", dt1_hour, ", hora2:", dt2_hour)
                         # Calcular diferencia
                         diff = (dt1_hour - dt2_hour).total_seconds() / 3600  # diferencia en horas
                         print ("DIFERENCIA HORAS:", diff)
@@ -612,17 +618,17 @@ if valMercado==True:
                             hor_rango=1
 
                         if 0 <= diff <= hor_rango: #HORAS MENOR A 5
-                            print("===PASO HORAS===")
+                            #print("===PASO HORAS===")
                             cantidad=1
                             precio = 0
                             right="P"
                             fecha_entrada = row["EntryTime"].strftime("%Y-%m-%d %H:%M:%S") 
-                            print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
+                            #print("fecha_entrada:", type(fecha_entrada), fecha_entrada)
                             #bd.registrar_orden(ticker, cantidad, precio, tipo, fecha_entrada)
                             
                             filtro = df_strike_pred_old.query("Ticker==@ticker and semana=='s1' and Tag=='short'")
                             mov_calculado =   np.float64(filtro.iloc[0]["strike_price_q3"])
-                            print("----- Baja semana:", filtro.shape[0], ", dato:", mov_calculado, ", tipo:", type(mov_calculado))
+                            #print("----- Baja semana:", filtro.shape[0], ", dato:", mov_calculado, ", tipo:", type(mov_calculado))
                             strike_calculado = Decimal(str(mov_calculado))
 
                             
@@ -637,7 +643,10 @@ if valMercado==True:
                                 id_file=id_file,
                                 inicio_ts=inicio_ts,
                                 cant_trades=cant_trades,
-                                precio_max_prima=precio_max_prima)
+                                precio_max_prima=precio_max_prima,
+                                min_days_vcto = MIN_DAYS_TO_EXPIRY,
+                                max_days_vcto = MAX_DAYS_TO_EXPIRY                                
+                                )
                             if order_put:   
                                 print("====Datos de la posicion===")
                                 print("entry_price_per_share:",order_put["entry_price_per_share"])

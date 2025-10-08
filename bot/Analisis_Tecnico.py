@@ -425,7 +425,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
             df2 = pd.DataFrame()
             if idvelafintend==0:
                 idvelafintend = dfprincipal[(dfprincipal.index>i)].index[-1]
-            print("==>hito carlos, i:", i, ", idvelafintend:", idvelafintend )
+            #print("==>hito carlos, i:", i, ", idvelafintend:", idvelafintend )
             df2 = (dfprincipal.query("index>=@i and index<@idvelafintend")).copy() #no tomar en cuenta el ultimo registro porque ya es cambio de tendencia
             
             iniEval = i
@@ -513,7 +513,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 take_profit_pred = price+strike_calculado+atr_mult_sl_2*atr
                                 dfprincipal.loc[i,'ind_posicion']=1
                                 dfprincipal.loc[idBreakOutIni,'isBreakOutIni']=1
-                                print(f"ENTRADA LONG en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni: {idBreakOutIni}")
+                                #print(f"ENTRADA LONG en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni: {idBreakOutIni}")
                             
                             elif (tipo=="BAJA"):
                                 position = 'short'
@@ -526,7 +526,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 take_profit_pred = price-strike_calculado-atr_mult_sl_2*atr
                                 dfprincipal.loc[i,'ind_posicion2']=-1
                                 dfprincipal.loc[idBreakOutIni,'isBreakOutIni2']=-1
-                                print(f"ENTRADA SHORT en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni2: {idBreakOutIni}")
+                                #print(f"ENTRADA SHORT en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni2: {idBreakOutIni}")
 
                             datetime2 = None
                             #price2 = None
@@ -579,7 +579,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 if position == 'long' and price <= trailing_stop:
                                     iniEval = k
                                     dfprincipal.loc[k,'isBreakOutFinal']=1
-                                    print(f"SALIDA LONG en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f})  idBreakOutFinal: {iniEval}")
+                                    #print(f"SALIDA LONG en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f})  idBreakOutFinal: {iniEval}")
                                     #fila[3]=price
                                     fila[3] = trailing_stop #+ (1e-3)
                                     fila[5]=datetime
@@ -590,7 +590,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 if position == 'short' and price >= trailing_stop:
                                     iniEval = k
                                     dfprincipal.loc[k,'isBreakOutFinal2']=-1
-                                    print(f"SALIDA SHORT en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f})  idBreakOutFinal2: {iniEval}")
+                                    #print(f"SALIDA SHORT en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f})  idBreakOutFinal2: {iniEval}")
                                     #fila[3]=price
                                     fila[3] = trailing_stop #- (1e-3)
                                     fila[5]=datetime
@@ -624,7 +624,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
     #Convertir a dataframe la lista
     columnas = ['Ticker', 'caso', 'EntryPrice', 'ExitPrice', 'EntryTime', 'ExitTime', 'Tag', 'ADX', 'ATR', 'casopadre', 'casohijo','trailingstop','strike_price_q3_old', 'take_profit']
     df_casos = pd.DataFrame(filas, columns=columnas)
-    print("AQUI CARLOS")
+    #print("AQUI CARLOS")
     #print("cantidad:", df_casos.shape[0])
     #df_casos['price_distance'] = np.nan
     #df_casos['duration'] = np.nan

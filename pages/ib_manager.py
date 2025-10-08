@@ -17,9 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-# sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
-# from bot import script_crud as bd #Desarrollo
-import script_crud as bd
+sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+from bot import script_crud as bd #Desarrollo
+#import script_crud as bd
 
 #------------------------
 # funciones
@@ -43,8 +43,8 @@ def cargar_config():
 #--------------------------
 # Variables para rutas
 #--------------------------
-path_file="/mnt/efs" #produccion
-# path_file = "D:/TraderEstrategias" #desarrollo carlos
+#path_file="/mnt/efs" #produccion
+path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
 user="carlosml0287"
 #user="investyolanda1"
@@ -106,6 +106,7 @@ else:
     sys.exit(1)  # Termina el programa con un código de error 1
 
 inicio_ts = Decimal(config.get("inicio_ts"))
+multATR = Decimal(config.get("multATR"))
 acceskey=user_data.get("aws_access_key_id")
 secretaccess=user_data.get("aws_secret_access_key")
 table_posiciones_abiertas=f"posiciones_abiertas_{id_file}"
@@ -126,19 +127,10 @@ print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 #BASE DE DATOS DYNAMODB
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                          endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
-
-# # # Conexión a DynamoDB Local
-# dynamodb = boto3.resource(
-#     'dynamodb',
-#     endpoint_url="http://localhost:8000",  # colocar si es entorno local
-#     region_name="us-west-2",
-#     aws_access_key_id="fakeMyKeyId",
-#     aws_secret_access_key="fakeSecretAccessKey"
-# )
 
 # Cache en memoria
 cache_data = {"items": [], "last_update": None}
@@ -181,14 +173,6 @@ async def get_posiciones_abiertas(conId: int):
     items = response['Items']
     return items
 
-# async def get_ibkr_trades(conId: int):
-#     tabla = dynamodb.Table(table_IBKR_Trades)
-#     # Query: filtra por la partition key (ej. "UserId") y aplica un filtro adicional
-#     response = tabla.query(         
-#         KeyConditionExpression=Key('conId').eq(conId) # obligatorio usar partition key
-#     )
-#     items = response['Items']
-#     return items
 
 # Permitir conexiones desde Streamlit
 app.add_middleware(
@@ -424,21 +408,21 @@ async def get_order():
     # Forzar a traer todas las órdenes abiertas
     await ib.reqAllOpenOrdersAsync()
     
-    orders = ib.openOrders()
+    #orders = ib.openOrders()
     trades = ib.trades() 
 
-    print("===ordenes===")
-    print(orders)
+    #print("===ordenes===")
+    #print(orders)
 
-    print("=== TRADES BACK ===")
-    print(trades)
-    print("total items.",len(trades))
+    #print("=== TRADES BACK ===")
+    #print(trades)
+    #print("total items.",len(trades))
 
-    data3 = []
-    cnt= 0
+    #cnt= 0
+    data3 = []    
     for t in trades:
-        cnt=cnt+1
-        print("cnt:", cnt)
+        #cnt=cnt+1
+        #print("cnt:", cnt)
         contract = t.contract
         if contract.secType != 'OPT':
             f_instrument =contract.localSymbol
@@ -745,8 +729,8 @@ async def get_data_all():
 
         #TRAILING STOP
         #Generar Trailing Stop con ATR
-        atr_mult_sl_1 = 0.8
-        entry_price = trailing_stop = None
+        atr_mult_sl_1 = multATR
+        trailing_stop = None
       
         #pricenow = df_datamkt["close"].iloc[-1]
         df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
@@ -830,13 +814,17 @@ async def get_data_all():
                     #print(df3)
                     for k, row3 in df3.iterrows():
                         price = df_datamkt.loc[k, 'close']
+                        priceLow = df_datamkt.loc[k, 'low']
+                        priceHigh = df_datamkt.loc[k, 'high']
                         atr = df_datamkt.loc[k, 'ATR']
                         if right=="C":
                             new_stop = price - atr_mult_sl_1 * atr
+                            new_stopLow = priceLow - atr_mult_sl_1 * atr
+                            new_stopHigh = priceHigh - atr_mult_sl_1 * atr
                             if trailing_stop is None:
                                 trailing_stop = new_stop
                             else:
-                                trailing_stop = max(trailing_stop, new_stop)
+                                trailing_stop = max(trailing_stop, new_stop, new_stopLow, new_stopHigh)
 
                             # Salida de la operación (long example)
                             if price <= trailing_stop:                        
@@ -844,13 +832,15 @@ async def get_data_all():
                         
                         elif right=="P":
                             new_stop = price + atr_mult_sl_1 * atr
+                            new_stopLow = priceLow + atr_mult_sl_1 * atr
+                            new_stopHigh = priceHigh + atr_mult_sl_1 * atr
                             if trailing_stop is None:
                                 trailing_stop = new_stop
                             else:
-                                trailing_stop = min(trailing_stop, new_stop)
+                                trailing_stop = min(trailing_stop, new_stop, new_stopLow, new_stopHigh)
                             # Salida de la operación (short example)
                             if price >= trailing_stop:
-                                cnt_cerrar = cnt_cerrar + 1                            
+                                cnt_cerrar = cnt_cerrar + 1            
                             
                         #print("k:",k,",trailing_stop:", trailing_stop)
                         df_datamkt.loc[k, 'trailing_stop'] = trailing_stop

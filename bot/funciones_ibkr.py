@@ -10,11 +10,11 @@ import decimal as Decimal
 IB_CLIENT_ID = 502
 
 
-path_folder="/mnt/efs" #Produccion
-# path_folder="D:/traderxpro/" #Desarrollo
+# path_folder="/mnt/efs" #Produccion
+path_folder="D:/traderxpro/" #Desarrollo
 
 
-MAX_DAYS_TO_EXPIRY = 8
+#MAX_DAYS_TO_EXPIRY = 8
 TAKE_PROFIT_MULT = 1.75   # 75% profit
 ESTIMATED_FEES_PER_CONTRACT = 1.00  # ajusta según tu cuenta/mercado
 USE_MID_PRICE = True      # True: usar mid, False: usar last/ask
@@ -47,13 +47,13 @@ def nearest_strikes(strikes, target, tol):
     return sorted([s for s in strikes if abs(float(s) - target) <= tol],
                   key=lambda x: abs(float(x) - target))
 
-def expirations_within(expirations, max_days=7):
+def expirations_within(expirations, min_days=2,  max_days=8):
     out = []
     today = datetime.now(timezone.utc).date()
     for e in expirations:
         # IB devuelve 'YYYYMMDD' (a veces con HHMM); tomamos primeros 8
         d = datetime.strptime(e[:8], "%Y%m%d").date()
-        if (d - today).days >= 0 and (d - today).days <= max_days:
+        if (d - today).days >= min_days and (d - today).days <= max_days:
             out.append(e)
     return sorted(out)
 
@@ -67,7 +67,7 @@ def option_mid_or_last(t: Ticker):
             return float(v)
     return None
 
-def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float,precio_max_prima:float):
+def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float,precio_max_prima:float, min_days_vcto:int, max_days_vcto:int):
     """
     side: 'CALL' o 'PUT'
     expected_move: cuánto esperas que suba/baje el subyacente (en USD)
@@ -77,12 +77,12 @@ def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float,pr
         raise ValueError("side debe ser 'CALL' o 'PUT'")
 
     # 1) spot y strike objetivo
-    print("pick_option_contract h1")
+    #print("pick_option_contract h1")
     spot = get_spot_price(ib, symbol)
     strike_obj = spot + expected_move if side == 'CALL' else spot - expected_move
 
     # 2) parámetros de opciones
-    print("pick_option_contract h2")
+    #print("pick_option_contract h2")
     stk = Stock(symbol, 'SMART', 'USD')
     ib.qualifyContracts(stk)
     params = ib.reqSecDefOptParams(symbol, '', 'STK', stk.conId)
@@ -91,7 +91,7 @@ def pick_option_contract(ib: IB, symbol: str, side: str, expected_move: float,pr
 
     # Tomamos el primer set para SMART (u otro si corresponde)
     p = next((x for x in params if x.exchange == 'SMART'), params[0])
-    expirations = expirations_within(p.expirations, MAX_DAYS_TO_EXPIRY)
+    expirations = expirations_within(p.expirations, min_days_vcto, max_days_vcto)
     if not expirations:
         #raise RuntimeError("No hay expiraciones ≤ 7 días")
         print("No hay expiraciones ≤ 8 días")
@@ -251,7 +251,7 @@ def positions_open_day(ib: IB):
 
 # ===== Ejecución end-to-end =====
 
-def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: int = 1,ip:str="3.3.3.3",port:int=0,id_file:str="default",inicio_ts:float=0.0,cant_trades=0,precio_max_prima:float=0.0):
+def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: int = 1,ip:str="3.3.3.3",port:int=0,id_file:str="default",inicio_ts:float=0.0,cant_trades=0,precio_max_prima:float=0.0, min_days_vcto = 2, max_days_vcto =8):
     """
     symbol: subyacente (ej. 'AAPL')
     side: 'CALL' o 'PUT'
@@ -274,7 +274,7 @@ def run_strategy(symbol: str, side: str, expected_move: float, qty_contracts: in
 #cant_trades = config_prev.get("cant_trades")
 
         if cant_pos==0 & cant_pos_day<=cant_trades:
-            choice = pick_option_contract(ib, symbol, side, expected_move,precio_max_prima)
+            choice = pick_option_contract(ib, symbol, side, expected_move,precio_max_prima,min_days_vcto,max_days_vcto)
             print("carlos h2 run_estrategy")
             if choice:
                 c = choice["contract"]
