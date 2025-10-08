@@ -219,6 +219,8 @@ id=user_data.get("account_idpaper")
 st.write("ID: ",id)
 # st.write("El id es: ",id)
 CONFIG_FILE2=f"{path_folder}/config_gestion_riesgo/config_{id}/config_riesgo.json"
+st.write("CONFIG_FILE_2 ",CONFIG_FILE2)
+
 config = cargar_config()
 st.write("configuracion: ",config)
 
