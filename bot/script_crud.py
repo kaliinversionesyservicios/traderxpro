@@ -13,8 +13,6 @@ from botocore.exceptions import ClientError
 dynamodb = boto3.resource( 
     'dynamodb',
     region_name="us-east-2",
-    aws_access_key_id="AKIAYCUP6PDKIQ25PGUY",
-    aws_secret_access_key="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"
 )
 
 
