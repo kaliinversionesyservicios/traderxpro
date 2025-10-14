@@ -3,7 +3,59 @@ import pandas as pd
 import numpy as np
 
 #==FUNCIONES==
-def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
+#Funcion revisar patron de vela seleccionada
+def patron_vela(dfpl,i,idBreakOutIni,indiceFinal2):
+    #print ("idBreakOutIni:",idBreakOutIni, "type:", type(idBreakOutIni))
+    finvela = indiceFinal2
+    dfpl2 = dfpl[(dfpl.index>idBreakOutIni)].copy()
+    #ticker=dfpl2['companyName'][i]
+
+    if (dfpl["cruce_medias"][i]==1): #ALCISTA
+        if (dfpl["Close"][idBreakOutIni]>=dfpl["Open"][idBreakOutIni]): #Vela Verde
+            finvela=idBreakOutIni
+        else:
+            cant = 0
+            for k, row in dfpl2.iterrows():
+                #print(f"Revisar siguiente vela")
+                #ultvela = dfpl[(dfpl.index>idBreakOutIni)].iloc[-1] #Devolver ultimo registro como una serie                
+                #print(ultvela)
+                idultvela = k #index vela evaluar
+                #print ("idultvela:",idultvela, "type:", type(idultvela))                
+                idvelaprev = idultvela - 1
+                if (
+                    (dfpl["Close"][idultvela]>=dfpl["Open"][idultvela])
+                    &
+                    (dfpl["Close"][idultvela]>=dfpl["Close"][idvelaprev])
+                    &
+                    (cant==0)
+                    ): #Vela Verde
+                    cant=cant+1
+                    finvela = idultvela
+
+    elif (dfpl["cruce_medias"][i]==-1): #BAJISTA
+        if (dfpl["Open"][idBreakOutIni]>=dfpl["Close"][idBreakOutIni]): #Vela Roja
+            finvela = idBreakOutIni
+        else:
+            cant = 0
+            for k, row in dfpl2.iterrows():
+                #print(f"Revisar siguiente vela")
+                ultvela = dfpl[(dfpl.index>idBreakOutIni)].iloc[-1] #Devolver ultimo registro como una serie
+                #print(ultvela)
+                idultvela = int(ultvela.name) #index ultvela
+                #print ("idultvela:",idultvela, "type:", type(idultvela))            
+                idvelaprev = idultvela - 1
+                if (
+                    (dfpl["Open"][idultvela]>=dfpl["Close"][idultvela])
+                    &
+                    (dfpl["Close"][idultvela]<=dfpl["Close"][idvelaprev])
+                    &
+                    (cant==0)
+                    ): #Vela Roja
+                    cant=cant+1
+                    finvela = idultvela
+    return finvela
+
+def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,varMATR,tag):
     if tag == "long":
         cruce_medias = "cruce_medias"
         EMACorta = "EMACorta"
@@ -17,7 +69,7 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
         #ALZA, velas por encima de promedios moviles
         #ultimo high por encima y ultimo low cerca a los promedios
         #Obtener Siguiente Low
-        siguiente_L = dfpl[(dfpl.index>=j) & (dfpl.index<=idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2))].head(1)        
+        siguiente_L = dfpl[(dfpl.index>=j) & (dfpl.index<=idvelafintend) & ((dfpl["isPivot"]==2) | (dfpl["isPivot2"]==2) | (dfpl["isPivot3"]==2))].head(1)     
         if (siguiente_L.shape[0]>0):         
             #if (((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0]['EMA35'])<1.5) | ((siguiente_L.iloc[0]['adx'])>20)):
             if (
@@ -27,13 +79,13 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                 &
                     (
                         (
-                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*2) &
-                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
+                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*varMATR) &
+                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*varMATR))
                         )
                         |
                         (    
-                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*2) &
-                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
+                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*varMATR) &
+                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*varMATR))
                         )
                     )
                 & #Color de vela Verde
@@ -48,13 +100,13 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                 &
                     (
                         (    
-                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*2) &
-                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
+                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*varMATR) &
+                        ((siguiente_L.iloc[0]['Low']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*varMATR))
                         )
                         |
                         (    
-                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*2) &
-                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*2))
+                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])<=siguiente_L.iloc[0]['ATR']*varMATR) &
+                        ((siguiente_L.iloc[0]['High']-siguiente_L.iloc[0][EMACorta])>=-(siguiente_L.iloc[0]['ATR']*varMATR))
                         )
                     )
                 & #Color de vela Verde
@@ -100,15 +152,15 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                     &
                     (
                         (
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])<=siguiente_H.iloc[0]['ATR']*2) 
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])<=siguiente_H.iloc[0]['ATR']*varMATR) 
                         &
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])>=-(siguiente_H.iloc[0]['ATR']*2))
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])>=-(siguiente_H.iloc[0]['ATR']*varMATR))
                         )
                         |
                         (
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])<=siguiente_H.iloc[0]['ATR']*2) 
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])<=siguiente_H.iloc[0]['ATR']*varMATR) 
                         &
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])>=-(siguiente_H.iloc[0]['ATR']*2))
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])>=-(siguiente_H.iloc[0]['ATR']*varMATR))
                         )
                     
                     )
@@ -124,15 +176,15 @@ def obtEntrada(dfpl,i,j, idvelafintend, var_adx1,tag):
                     &
                     (
                         (
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])<=siguiente_H.iloc[0]['ATR']*2) 
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])<=siguiente_H.iloc[0]['ATR']*varMATR) 
                         &
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])>=-(siguiente_H.iloc[0]['ATR']*2))
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['High'])>=-(siguiente_H.iloc[0]['ATR']*varMATR))
                         )
                         |
                         (
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])<=siguiente_H.iloc[0]['ATR']*2) 
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])<=siguiente_H.iloc[0]['ATR']*varMATR) 
                         &
-                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])>=-(siguiente_H.iloc[0]['ATR']*2))
+                        ((siguiente_H.iloc[0][EMACorta]-siguiente_H.iloc[0]['Low'])>=-(siguiente_H.iloc[0]['ATR']*varMATR))
                         )
                     )
                     & #Color de vela Rojo
@@ -444,10 +496,11 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                     filtro = df_variable.query("Ticker==@ticker and Tag==@tag")
                     if filtro.shape[0]>0:
                         var_adx1 = filtro.iloc[0]["var_adx1"]
+                        varMATR = filtro.iloc[0]["varMATR"]
                     else:
                         var_adx1 = 15
-                        
-                    idBreakOutIni, idBreakOutIni2 = obtEntrada(dfpl, i, j, idvelafintend, var_adx1, tag)
+                        varMATR = 2
+                    idBreakOutIni, idBreakOutIni2 = obtEntrada(dfpl, i, j, idvelafintend, var_adx1,varMATR, tag)
                     if idBreakOutIni2==j: idBreakOutIni2+=1
                     #print("===obteniendo entrada===")
                     #print ("idBreakOutIni:", idBreakOutIni)
@@ -465,9 +518,12 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                             tipo_pivot=3
                         
                         ind_trendHL = revisarVelas(dfpl, idBreakOutIni, i, tipo_pivot, idBreakOutIniPrev, tag) #COMETADO CARLOS 24072025
+                        
+                        #Revisar patron de velas ALCISTA o BAJISTA, segun corresponda
+                        velaEntrada = patron_vela(dfpl,i,idBreakOutIni,idBreakOutIni2)
                         #ind_trendHL = 1  
                         #ind_sl, sl35, sl50, sl = obtSlope(dfpl,i,j,idBreakOutIni, tag)
-                        adx = dfpl.loc[idBreakOutIni, "adx"]
+                        adx = dfpl.loc[velaEntrada, "adx"]
                         #if ( (((ind_trendHL>0) or (ind_sl>0)) and (dfpl.loc[idBreakOutIni, "adx"]>15)) or ((dfpl.loc[idBreakOutIni, "adx"]>25) and (dfpl.loc[idBreakOutIni, "ATR"]>dfpl.loc[idBreakOutIni, "EMA35_ATR"]))):
                         #if ( ((ind_trendHL>0) and (dfpl.loc[idBreakOutIni, "adx"]>15)) or ((dfpl.loc[idBreakOutIni, "adx"]>25) and (dfpl.loc[idBreakOutIni, "ATR"]>dfpl.loc[idBreakOutIni, "EMA35_ATR"]))):
                         #if ( (ind_trendHL>0) or ((dfpl.loc[idBreakOutIni, "adx"]>15) and (dfpl.loc[idBreakOutIni, "ATR"]>dfpl.loc[idBreakOutIni, "EMA35_ATR"]*1.5))):
@@ -478,24 +534,24 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                             idcaso = idcaso + 1
                             idcasohijo = idcasohijo + 1
                             if idcasohijo==1: idcasopadre = idcasopadre + 1
-                            idBreakOutIniPrev = idBreakOutIni
+                            idBreakOutIniPrev = velaEntrada
                             #Recorrer para obtener la salida
-                            df3 = (dfprincipal.query("index>=@idBreakOutIni")).copy()
-                            #price = dfprincipal.loc[idBreakOutIni, 'EMA5'] #Revisar que EMA es la apropiada                            
-                            price = dfprincipal.loc[idBreakOutIni, 'Close'] #carlos 1707
-                            #priceL = dfprincipal.loc[idBreakOutIni, 'Low'] #carlos 1707
-                            #priceH = dfprincipal.loc[idBreakOutIni, 'High'] #carlos 1707
+                            df3 = (dfprincipal.query("index>=@velaEntrada")).copy()
+                            #price = dfprincipal.loc[velaEntrada, 'EMA5'] #Revisar que EMA es la apropiada                            
+                            price = dfprincipal.loc[velaEntrada, 'Close'] #carlos 1707
+                            #priceL = dfprincipal.loc[velaEntrada, 'Low'] #carlos 1707
+                            #priceH = dfprincipal.loc[velaEntrada, 'High'] #carlos 1707
 
-                            if dfprincipal.loc[idBreakOutIni, 'Close']>dfprincipal.loc[idBreakOutIni, 'Open']:
-                                priceLong = dfprincipal.loc[idBreakOutIni, 'Open']
-                                priceShort = dfprincipal.loc[idBreakOutIni, 'Close']
+                            if dfprincipal.loc[velaEntrada, 'Close']>dfprincipal.loc[idBreakOutIni, 'Open']:
+                                priceLong = dfprincipal.loc[velaEntrada, 'Open']
+                                priceShort = dfprincipal.loc[velaEntrada, 'Close']
                             else:
-                                priceLong = dfprincipal.loc[idBreakOutIni, 'Close']
-                                priceShort = dfprincipal.loc[idBreakOutIni, 'Open']
+                                priceLong = dfprincipal.loc[velaEntrada, 'Close']
+                                priceShort = dfprincipal.loc[velaEntrada, 'Open']
                             
-                            atr = dfprincipal.loc[idBreakOutIni, 'ATR']
-                            atr2 = dfprincipal.loc[idBreakOutIni, 'ATR2']
-                            datetime = dfprincipal.loc[idBreakOutIni, 'Datetime']
+                            atr = dfprincipal.loc[velaEntrada, 'ATR']
+                            atr2 = dfprincipal.loc[velaEntrada, 'ATR2']
+                            datetime = dfprincipal.loc[velaEntrada, 'Datetime']
 
                             # Variables de control
                             #position = None  # 'long' o 'short'
@@ -512,7 +568,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 #take_profit_pred = (price+strike_calculado) + atr_mult_sl * atr
                                 take_profit_pred = price+strike_calculado+atr_mult_sl_2*atr
                                 dfprincipal.loc[i,'ind_posicion']=1
-                                dfprincipal.loc[idBreakOutIni,'isBreakOutIni']=1
+                                dfprincipal.loc[velaEntrada,'isBreakOutIni']=1
                                 #print(f"ENTRADA LONG en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni: {idBreakOutIni}")
                             
                             elif (tipo=="BAJA"):
@@ -525,7 +581,7 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                                 #take_profit_pred = (price-strike_calculado) - atr_mult_sl * atr
                                 take_profit_pred = price-strike_calculado-atr_mult_sl_2*atr
                                 dfprincipal.loc[i,'ind_posicion2']=-1
-                                dfprincipal.loc[idBreakOutIni,'isBreakOutIni2']=-1
+                                dfprincipal.loc[velaEntrada,'isBreakOutIni2']=-1
                                 #print(f"ENTRADA SHORT en {price:.2f} el {datetime} (TSL: {trailing_stop:.2f}) idBreakOutIni2: {idBreakOutIni}")
 
                             datetime2 = None
@@ -533,13 +589,13 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                             id2 = 0
                             #Revisar puntos mas altos, para obtener el STRIKE minimo
                             if position == 'long': #ALCISTA
-                                cnt2 = dfpl.query("index>@idBreakOutIni and isPivot==1").shape[0]
+                                cnt2 = dfpl.query("index>@velaEntrada and isPivot==1").shape[0]
                                 if cnt2>0:
-                                    id2 = dfpl.query("index>@idBreakOutIni and isPivot==1").index[0]
+                                    id2 = dfpl.query("index>@velaEntrada and isPivot==1").index[0]
                             elif position == 'short': #BAJISTA
-                                cnt2 = dfpl.query("index>@idBreakOutIni and isPivot==2").shape[0]
+                                cnt2 = dfpl.query("index>@velaEntrada and isPivot==2").shape[0]
                                 if cnt2>0:
-                                    id2 = dfpl.query("index>@idBreakOutIni and isPivot==2").index[0]
+                                    id2 = dfpl.query("index>@velaEntrada and isPivot==2").index[0]
 
                             exit_date_pivote = exit_price_pivote = np.nan
 
@@ -553,9 +609,9 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
                             fila = [ticker, idcaso,entry_price, np.nan, entry_date, np.nan, position, adx, atr, idcasopadre, idcasohijo, trailing_stop, strike_calculado, take_profit_pred]
 
                             if tag=="long":
-                                dfprincipal.loc[idBreakOutIni,'trailing_stop']=trailing_stop #carlos tmp
+                                dfprincipal.loc[velaEntrada,'trailing_stop']=trailing_stop #carlos tmp
                             elif tag=="short":
-                                dfprincipal.loc[idBreakOutIni,'trailing_stop2']=trailing_stop #carlos tmp
+                                dfprincipal.loc[velaEntrada,'trailing_stop2']=trailing_stop #carlos tmp
 
                             
                             #estrategia para hallar la salida: usar stop loss estatico, si precio supera el strike calculado usar trailing stop
@@ -649,3 +705,5 @@ def obtener_casos(df, df_strike_pred_old, df_variable, ticker, tag, tipoDir):
        df_casos['price_distance'] =  np.nan
     
     return df_casos
+
+
