@@ -252,26 +252,14 @@ elif tipo_cuenta=="LIVE":
     queryid=user_data.get("id_flexquery_live")
     table_posiciones_abiertas=f"posiciones_abiertas_{id_cuenta}"
 
-acceskey=user_data.get("aws_access_key_id")
-secretaccess=user_data.get("aws_secret_access_key")
-
-
-# st.write("Los valores cargados son: ")
-# st.write("El id de la cuenta en la que estamos es: ",id_cuenta)
-# st.write("Table_IBKR_Trades: ",table_IBKR_Trades)
-# st.write("Table_IBKR_Account_paper: ",table_IBKR_Account)
-# st.write("Token: ",token)
-# st.write("Queryid: ",queryid)
-# st.write("talbe_psociones_abiertas: ",table_posiciones_abiertas)
-# st.write("Accesskey: ",acceskey)
-# st.write("SecrretAcces: ",secretaccess)
 
 
 
-dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
+
+
+
+dynamodb = boto3.resource("dynamodb", region_name="us-east-2"
                         #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
-                          aws_access_key_id=acceskey,
-                          aws_secret_access_key=secretaccess
                           )
 
 table = dynamodb.Table(table_IBKR_Trades)
