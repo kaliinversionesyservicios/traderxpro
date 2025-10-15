@@ -15,8 +15,8 @@ from scipy.signal import argrelextrema
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 from decimal import Decimal
-#import sys
-#sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from bot import script_crud as bd
 from components.sidebar import generarSidebar
 from streamlit_cookies_manager import EncryptedCookieManager

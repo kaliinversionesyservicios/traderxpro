@@ -17,9 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
-from bot import script_crud as bd #Desarrollo
-#import script_crud as bd
+#sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+#from bot import script_crud as bd #Desarrollo
+import script_crud as bd
 
 #------------------------
 # funciones
