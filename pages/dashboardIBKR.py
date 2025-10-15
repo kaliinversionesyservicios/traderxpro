@@ -194,7 +194,7 @@ def fetch_datamkt(ticker):
 def fetch_alldatamkt():
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=20) 
+        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=10) 
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
