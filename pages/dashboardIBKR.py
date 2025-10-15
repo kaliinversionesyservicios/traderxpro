@@ -128,7 +128,7 @@ def update_schedule_state(new_state):
 # ----------------------
 def fetch_positions():
     try:
-        resp = requests.get(f"{API_BASE}/positions", timeout=5)
+        resp = requests.get(f"{API_BASE}/positions", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -137,7 +137,7 @@ def fetch_positions():
 
 def fetch_trades():
     try:
-        resp = requests.get(f"{API_BASE}/trades", timeout=5)
+        resp = requests.get(f"{API_BASE}/trades", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -146,7 +146,7 @@ def fetch_trades():
 
 def fetch_portfolio():
     try:
-        resp = requests.get(f"{API_BASE}/portfolio", timeout=5)
+        resp = requests.get(f"{API_BASE}/portfolio", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -155,7 +155,7 @@ def fetch_portfolio():
 
 def fetch_order():
     try:
-        resp = requests.get(f"{API_BASE}/order", timeout=5)
+        resp = requests.get(f"{API_BASE}/order", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -164,7 +164,7 @@ def fetch_order():
 
 def fetch_summary():
     try:
-        resp = requests.get(f"{API_BASE}/summary", timeout=5)
+        resp = requests.get(f"{API_BASE}/summary", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -173,7 +173,7 @@ def fetch_summary():
 
 def fetch_accountSummary():
     try:
-        resp = requests.get(f"{API_BASE}/accountSummary", timeout=5)
+        resp = requests.get(f"{API_BASE}/accountSummary", timeout=7)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -183,7 +183,7 @@ def fetch_accountSummary():
 def fetch_datamkt(ticker):
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/datamkt/{ticker}", timeout=5)      
+        resp = requests.get(f"{API_BASE}/datamkt/{ticker}", timeout=7)      
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
@@ -194,7 +194,7 @@ def fetch_datamkt(ticker):
 def fetch_alldatamkt():
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=7) 
+        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=20) 
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
