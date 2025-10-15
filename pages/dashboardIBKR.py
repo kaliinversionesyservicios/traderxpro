@@ -15,8 +15,8 @@ from scipy.signal import argrelextrema
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 from decimal import Decimal
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+#import sys
+#sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from bot import script_crud as bd
 from components.sidebar import generarSidebar
 from streamlit_cookies_manager import EncryptedCookieManager
@@ -53,7 +53,7 @@ if not st.session_state.usuario:
 # VARIABLES GLOBALES
 #----------------------
 path_folder="/mnt/efs" #PRODUCCION
-# path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
+#path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
 # API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
@@ -75,7 +75,7 @@ match user:
         else:
             SCHEDULE_NAME="cron_scanner_bot_carlos_secuencial_param_cero"
         API_BASE="http://3.13.179.45:8000"
-        # API_BASE = "http://127.0.0.1:8000"
+        #API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
         if hora== 13 and minuto>=30:
@@ -128,7 +128,7 @@ def update_schedule_state(new_state):
 # ----------------------
 def fetch_positions():
     try:
-        resp = requests.get(f"{API_BASE}/positions", timeout=7)
+        resp = requests.get(f"{API_BASE}/positions", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -137,7 +137,7 @@ def fetch_positions():
 
 def fetch_trades():
     try:
-        resp = requests.get(f"{API_BASE}/trades", timeout=7)
+        resp = requests.get(f"{API_BASE}/trades", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -146,7 +146,7 @@ def fetch_trades():
 
 def fetch_portfolio():
     try:
-        resp = requests.get(f"{API_BASE}/portfolio", timeout=7)
+        resp = requests.get(f"{API_BASE}/portfolio", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -155,7 +155,7 @@ def fetch_portfolio():
 
 def fetch_order():
     try:
-        resp = requests.get(f"{API_BASE}/order", timeout=7)
+        resp = requests.get(f"{API_BASE}/order", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -164,7 +164,7 @@ def fetch_order():
 
 def fetch_summary():
     try:
-        resp = requests.get(f"{API_BASE}/summary", timeout=7)
+        resp = requests.get(f"{API_BASE}/summary", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -173,7 +173,7 @@ def fetch_summary():
 
 def fetch_accountSummary():
     try:
-        resp = requests.get(f"{API_BASE}/accountSummary", timeout=7)
+        resp = requests.get(f"{API_BASE}/accountSummary", timeout=15)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -183,7 +183,7 @@ def fetch_accountSummary():
 def fetch_datamkt(ticker):
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/datamkt/{ticker}", timeout=7)      
+        resp = requests.get(f"{API_BASE}/datamkt/{ticker}", timeout=15)      
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
@@ -194,12 +194,23 @@ def fetch_datamkt(ticker):
 def fetch_alldatamkt():
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=10) 
+        resp = requests.get(f"{API_BASE}/alldatamkt", timeout=15) 
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
     except Exception as e:
         st.warning(f"Error fetching alldatamark: {e}")
+    return []
+
+def fetch_datamkt_ticker(ticker):
+    #df_datamkt = pd.DataFrame()
+    try:
+        resp = requests.get(f"{API_BASE}/tickerdatamkt/{ticker}", timeout=15) 
+        if resp.status_code == 200: 
+            bars = resp.json()
+        return bars
+    except Exception as e:
+        st.warning(f"Error fetching ticker datamark: {e}")
     return []
 
 # CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
@@ -253,13 +264,8 @@ elif tipo_cuenta=="LIVE":
     table_posiciones_abiertas=f"posiciones_abiertas_{id_cuenta}"
 
 
-
-
-
-
-
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2"
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                        #endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           )
 
 table = dynamodb.Table(table_IBKR_Trades)
@@ -315,10 +321,6 @@ else:
     # Crear un DataFrame vacío
     df_variable = pd.DataFrame()
     print("Archivo no existe. Se creó un DataFrame vacío.")
-
-
-
-#AQUI
 
 def check_ib_manager(base_url):
     """Verifica si ib_manager responde en esta instancia"""
@@ -914,66 +916,69 @@ with tab1:
 
                 try:
                     print ("hito3")
-                    alldatamark = fetch_alldatamkt()
-                    df_alldatamark = pd.DataFrame(alldatamark)
-                    ##datamkt=fetch_datamkt(symbol)                    
-                    print ("hito4")
-                    #df_datamkt = pd.DataFrame(datamkt)
-                    df_datamkt = df_alldatamark[df_alldatamark["ticker"]==symbol] #Filtrar por un symbol
-                    df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
-                    print ("hito5")
-                    #print("info dataframe")    
-                    #print(selected.info())
-                    #print(selected)
-                    print("dateTime:",selected.iloc[0]["dateTime"])
-                    #fechaEvaluar = pd.to_datetime(selected.iloc[0]["dateTime"])
-                    print ("hito55")
-                    #print("fechaEvaluar:", fechaEvaluar)
-                    #print("tipo fechaEvaluar:", type(fechaEvaluar))
+                    #alldatamark = fetch_alldatamkt()
+                    #df_alldatamark = pd.DataFrame(alldatamark)
+                    datamark = fetch_datamkt_ticker(symbol)
+                    df_datamkt = pd.DataFrame(datamark)
+                    if df_datamkt.shape[0]>0:
+                        ##datamkt=fetch_datamkt(symbol)
+                        print ("hito4")
+                        #df_datamkt = pd.DataFrame(datamkt)
+                        #df_datamkt = df_alldatamark[df_alldatamark["ticker"]==symbol] #Filtrar por un symbol
+                        df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
+                        print ("hito5")
+                        #print("info dataframe")    
+                        #print(selected.info())
+                        #print(selected)
+                        print("dateTime:",selected.iloc[0]["dateTime"])
+                        #fechaEvaluar = pd.to_datetime(selected.iloc[0]["dateTime"])
+                        print ("hito55")
+                        #print("fechaEvaluar:", fechaEvaluar)
+                        #print("tipo fechaEvaluar:", type(fechaEvaluar))
 
-                    #print(df_datamkt["date"].tail(10))
+                        #print(df_datamkt["date"].tail(10))
 
-                    #fechaEvaluarstr = selected.iloc[0]["dateTime"]
-                    #print ("fechaEvaluar:", fechaEvaluarstr, ", tipo:", type(fechaEvaluarstr))
-                    #fechaEvaluar = pd.to_datetime(fechaEvaluarstr, format="%d/%m/%Y;%H:%M:%S")
+                        #fechaEvaluarstr = selected.iloc[0]["dateTime"]
+                        #print ("fechaEvaluar:", fechaEvaluarstr, ", tipo:", type(fechaEvaluarstr))
+                        #fechaEvaluar = pd.to_datetime(fechaEvaluarstr, format="%d/%m/%Y;%H:%M:%S")
 
 
-                    #st.dataframe(df_datamkt)
-                    #print("df_datamkt")
+                        #st.dataframe(df_datamkt)
+                        #print("df_datamkt")
 
-                    #df_datamkt["inicioTrade"] = np.where(df_datamkt[(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"))], 1, 0)
-                    #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
+                        #df_datamkt["inicioTrade"] = np.where(df_datamkt[(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"))], 1, 0)
+                        #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
 
-                    print ("hito6")
-                    df_datamkt["Datetime_str"] = df_datamkt["date"].astype(str)
-                    df_datamkt["BarColor"] = df_datamkt[["open","close"]].apply(lambda o: "red" if o.open>o.close else "green", axis=1)
+                        print ("hito6")
+                        df_datamkt["Datetime_str"] = df_datamkt["date"].astype(str)
+                        df_datamkt["BarColor"] = df_datamkt[["open","close"]].apply(lambda o: "red" if o.open>o.close else "green", axis=1)
 
-                    if right=="C":
-                        tag="long"
-                    else:
-                        tag="short"
+                        if right=="C":
+                            tag="long"
+                        else:
+                            tag="short"
 
-                    filtro = df_variable.query("Ticker==@symbol and Tag==@tag")
+                        filtro = df_variable.query("Ticker==@symbol and Tag==@tag")
 
-                    if filtro.shape[0]>0:
-                        periodoCorto = filtro.iloc[0]["periodoCorto"]
-                        periodoLargo = filtro.iloc[0]["periodoLargo"]
-                    else:
-                        periodoCorto = 20
-                        periodoLargo = 40
-                    print ("hito7")
+                        if filtro.shape[0]>0:
+                            periodoCorto = filtro.iloc[0]["periodoCorto"]
+                            periodoLargo = filtro.iloc[0]["periodoLargo"]
+                        else:
+                            periodoCorto = 20
+                            periodoLargo = 40
+                        print ("hito7")
 
-                    #print("datos df_datamkt-->")
-                    #print(df_datamkt)
+                        #print("datos df_datamkt-->")
+                        #print(df_datamkt)
 
-                    #print(df_datamkt.info())
-                    hoy = datetime.today().date()
-                    print ("hito8")
-                    hace_5_dias = pd.to_datetime(hoy - timedelta(days=8))
-                    df_datamkt2 = df_datamkt[df_datamkt["date"]>=hace_5_dias].copy()
-                    print ("hito9")
-                    graficar(df_datamkt2,"",tag, selected, periodoCorto, periodoLargo)
-                    print ("hito10")
+                        #print(df_datamkt.info())
+                        hoy = datetime.today().date()
+                        print ("hito8")
+                        hace_5_dias = pd.to_datetime(hoy - timedelta(days=8))
+                        df_datamkt2 = df_datamkt[df_datamkt["date"]>=hace_5_dias].copy()
+                        print ("hito9")
+                        graficar(df_datamkt2,"",tag, selected, periodoCorto, periodoLargo)
+                        print ("hito10")
                 except Exception as e:
                     st.warning(f"Error datos del mercado: {e}")
 

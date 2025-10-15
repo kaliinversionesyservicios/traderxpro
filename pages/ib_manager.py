@@ -17,9 +17,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import sys
 import pytz
 import streamlit as st
-# sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
-# from bot import script_crud as bd #Desarrollo
-import script_crud as bd
+sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Desarrollo
+from bot import script_crud as bd #Desarrollo
+#import script_crud as bd
 
 #------------------------
 # funciones
@@ -44,11 +44,11 @@ def cargar_config():
 # Variables para rutas
 #--------------------------
 path_file="/mnt/efs" #produccion
-# path_file = "D:/TraderEstrategias" #desarrollo carlos
+#path_file = "D:/TraderEstrategias" #desarrollo carlos
 #Usuarios
 user="carlosml0287"
-# user="investyolanda1"
-# user="Ventanilla39"
+#user="investyolanda1"
+#user="Ventanilla39"
 # param_cuenta=int(sys.argv[1]) #0-PAPER 1-live
 param_cuenta=int(os.getenv("PARAM_CUENTA", "0"))  # por defecto 0 = PAPER
 CONFIG_FILE = f"{path_file}/config_gestion_riesgo/param.json"
@@ -621,6 +621,15 @@ async def get_data(ticker: str):
     return df.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo
 
 # Endpoint obtener datos total
+@app.get("/tickerdatamkt/{ticker}")
+async def get_data_ticker(ticker: str):
+    #===Obtener informacion en memoria de TICKER
+    df_data = pd.DataFrame()
+    df_data=st.session_state.get(f"data_{ticker}")
+    data = df_data.astype(object).where(pd.notnull(df_data), None).to_dict(orient="records")
+    return JSONResponse(content=data)
+
+# Endpoint obtener datos total
 @app.get("/alldatamkt")
 async def get_data_all():
     df_total = pd.DataFrame()
@@ -818,9 +827,9 @@ async def get_data_all():
                         priceHigh = df_datamkt.loc[k, 'high']
                         atr = df_datamkt.loc[k, 'ATR']
                         if right=="C":
-                            new_stop = price - atr_mult_sl_1 * atr
-                            new_stopLow = priceLow - atr_mult_sl_1 * atr
-                            new_stopHigh = priceHigh - atr_mult_sl_1 * atr
+                            new_stop = price - float(atr_mult_sl_1) * atr
+                            new_stopLow = priceLow - float(atr_mult_sl_1) * atr
+                            new_stopHigh = priceHigh - float(atr_mult_sl_1) * atr
                             if trailing_stop is None:
                                 trailing_stop = new_stop
                             else:
@@ -831,9 +840,9 @@ async def get_data_all():
                                 cnt_cerrar = cnt_cerrar + 1
                         
                         elif right=="P":
-                            new_stop = price + atr_mult_sl_1 * atr
-                            new_stopLow = priceLow + atr_mult_sl_1 * atr
-                            new_stopHigh = priceHigh + atr_mult_sl_1 * atr
+                            new_stop = price + float(atr_mult_sl_1) * atr
+                            new_stopLow = priceLow + float(atr_mult_sl_1) * atr
+                            new_stopHigh = priceHigh + float(atr_mult_sl_1) * atr
                             if trailing_stop is None:
                                 trailing_stop = new_stop
                             else:
@@ -863,7 +872,8 @@ async def get_data_all():
         df_datamkt["date"] = df_datamkt["date"].dt.strftime("%Y-%m-%dT%H:%M:%S") #volver a cambiar tipo de dato por el JSON
         print("df_datamkt:", df_datamkt.shape[0])
 
-        print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]].tail(40))
+        #print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]].tail(40))
+        st.session_state[f"data_{ticker}"] = df_datamkt
 
         if df_total.shape[0]<=0:
             df_total = df_datamkt
@@ -872,7 +882,7 @@ async def get_data_all():
 
         df_total = df_total.replace([np.inf, -np.inf], np.nan)
         df_total = df_total.where(pd.notnull(df_total), None)        
-    #return df_total.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo
+    #return df_total.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo    
     data = df_total.astype(object).where(pd.notnull(df_total), None).to_dict(orient="records")
     print("hito get_data_all 2222")
     return JSONResponse(content=data)
