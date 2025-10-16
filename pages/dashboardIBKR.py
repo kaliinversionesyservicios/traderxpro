@@ -55,7 +55,7 @@ if not st.session_state.usuario:
 path_folder="/mnt/efs" #PRODUCCION
 #path_folder="D:\TraderEstrategias" #DESARROLLO CARLOS
 
-# API_BASE = "http://127.0.0.1:8000"
+#API_BASE = "http://127.0.0.1:8000"
 client = boto3.client("scheduler", region_name="us-east-2") # Cliente de EventBridge Scheduler
 ssm = boto3.client("ssm", region_name="us-east-2")
 #Verificar si existe un usuario
@@ -202,16 +202,18 @@ def fetch_alldatamkt():
         st.warning(f"Error fetching alldatamark: {e}")
     return []
 
-def fetch_datamkt_ticker(ticker):
+def fetch_datamkt_ticker(conId):
     #df_datamkt = pd.DataFrame()
     try:
-        resp = requests.get(f"{API_BASE}/tickerdatamkt/{ticker}", timeout=15) 
+        resp = requests.get(f"{API_BASE}/tickerdatamkt/{conId}", timeout=15) 
         if resp.status_code == 200: 
             bars = resp.json()
         return bars
     except Exception as e:
         st.warning(f"Error fetching ticker datamark: {e}")
     return []
+
+
 
 # CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #DESARROLLO
 CONFIG_FILE=f"{path_folder}/config_gestion_riesgo/param.json" #PRODUCCION
@@ -630,14 +632,42 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
     
     # if Tag=="long":
     print("graficar h3")
-    cnt_iniTrade = dfpl[dfpl["inicioTrade"]==1]
-    print("graficar h4")
+   
     #cnt_ts = dfpl[(np.isnan(dfpl["trailing_stop"])==False)]
     
     #print ("carlosss cnt_ts:", cnt_ts.shape[0])
     #cnt_ts2 = dfpl[(dfpl.trailing_stop!=None)]
     #print ("carlosss cnt_ts:", cnt_ts2.shape[0])
 
+    p.line(
+        x="index", 
+        y="trailing_stop", 
+        color="blue",
+        line_width=1,
+        legend_label="trailing_stop",
+        source=dfpl)
+    
+    cnt_ts2 = dfpl[dfpl["trailing_stop"].notna()]
+    if cnt_ts2.shape[0]>0:
+        ts_now = (dfpl[["trailing_stop"]][(np.isnan(dfpl["trailing_stop"])==False)]).iloc[-1]["trailing_stop"]
+        print("ts_now:", ts_now)        
+        hTS=Span(location=ts_now,dimension='width', line_color='blue',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
+        print("graficar h4")
+        labeltS = Label(x=0,           # posición X (puedes ajustar según necesites)
+            y=ts_now,                # posición Y = ubicación de la línea
+            x_units='screen',        # relativo al ancho del gráfico
+            y_units='data',          # relativo a los datos (eje Y)
+            text=f"TS {ts_now}", # texto a mostrar
+            text_font_size="9pt",
+            text_color="blue",
+            background_fill_color="#efefef",
+            background_fill_alpha=0.7)
+        p.renderers.extend([hTS])
+        p.add_layout(labeltS)
+    
+
+    cnt_iniTrade = dfpl[dfpl["inicioTrade"]==1]
+    print("graficar h5")
 
     if cnt_iniTrade.shape[0]>0:
         #i2 = dfpl[dfpl["inicioTrade"]==1].index[0]
@@ -645,33 +675,10 @@ def graficar(dfpl,title,Tag, portafolio, periodoCorto, periodoLargo):
         #print("i2:",i2)
         #print("i_fin2:", fin2)
         print("graficar h6")
-        p.line(
-        x="index", 
-        y="trailing_stop", 
-        color="blue",
-        line_width=1,
-        legend_label="trailing_stop",
-        source=dfpl)
+        
         #source=dfpl[dfpl["trailing_stop"]!=None])
 
-        cnt_ts2 = dfpl[dfpl["trailing_stop"].notna()]
-        print ("carlosss cnt_ts:", cnt_ts2.shape[0])
-        if cnt_ts2.shape[0]>0:
-            ts_now = (dfpl[["trailing_stop"]][(np.isnan(dfpl["trailing_stop"])==False)]).iloc[-1]["trailing_stop"]
-            print("ts_now:", ts_now)        
-            hTS=Span(location=ts_now,dimension='width', line_color='blue',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
-            print("graficar h7")
-            labeltS = Label(x=0,           # posición X (puedes ajustar según necesites)
-                y=ts_now,                # posición Y = ubicación de la línea
-                x_units='screen',        # relativo al ancho del gráfico
-                y_units='data',          # relativo a los datos (eje Y)
-                text=f"TS {ts_now}", # texto a mostrar
-                text_font_size="9pt",
-                text_color="blue",
-                background_fill_color="#efefef",
-                background_fill_alpha=0.7)
-            p.renderers.extend([hTS])
-            p.add_layout(labeltS)
+        
 
         inicio = (dfpl[(dfpl.inicioTrade==1)].index).tolist()[0]
         vline=Span(location=inicio,dimension='height', line_color='grey',line_width=0.8, line_dash_offset= 0, line_dash='dashed',  level='annotation', tags= ['square'])
@@ -844,9 +851,9 @@ with tab1:
                 df_display,
                 gridOptions=grid_options,
                 update_mode=GridUpdateMode.SELECTION_CHANGED,
-                fit_columns_on_grid_load=True,
+                fit_columns_on_grid_load=False,#Desactiva ajuste uniforme
                 theme="balham",
-                height=600
+                height=600,
             )
 
         with col2:
@@ -890,7 +897,7 @@ with tab1:
                         key ={
                             'conId': int(conId)
                         }
-                        update_expression= "SET inicio_ts = :ini_ts"                        
+                        update_expression= "SET inicio_ts = :ini_ts, fecha_inicio_ts = :fec_ts"                        
 
                         # Conversión segura antes de armar expression_values
                         if hasattr(new_value, "item"):
@@ -899,13 +906,21 @@ with tab1:
                             safe_value = int(new_value)
                             
                         expression_values = {
-                            ':ini_ts': int(safe_value)
+                            ':ini_ts': int(safe_value),
+                            ':fec_ts' : None
                         }
 
                         #print("Tipo final:", type(expression_values[":ini_ts"]), expression_values[":ini_ts"])
                         
                         bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
-                        st.success("actualizado correctamente ✅")
+                        msg_reset = requests.post(f"{API_BASE}/reset_session_ts/{conId}").json()
+                        if msg_reset["status"] == "ok":
+                            st.success(msg_reset["message"])
+                            st.success("actualizado correctamente ✅")
+                        else:
+                            st.success("actualizado correctamente ✅")
+                            st.warning(msg_reset["message"])
+                        
 
             print ("hito2")
             if selected is not None and len(selected) > 0:
@@ -918,8 +933,9 @@ with tab1:
                     print ("hito3")
                     #alldatamark = fetch_alldatamkt()
                     #df_alldatamark = pd.DataFrame(alldatamark)
-                    datamark = fetch_datamkt_ticker(symbol)
+                    datamark = fetch_datamkt_ticker(str(conId))
                     df_datamkt = pd.DataFrame(datamark)
+                    #print(df_datamkt)
                     if df_datamkt.shape[0]>0:
                         ##datamkt=fetch_datamkt(symbol)
                         print ("hito4")

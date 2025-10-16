@@ -127,7 +127,7 @@ print("table_posiciones_abiertas: ",table_posiciones_abiertas)
 
 #BASE DE DATOS DYNAMODB
 dynamodb = boto3.resource("dynamodb", region_name="us-east-2",
-                        #   endpoint_url="http://localhost:8000",  # URL DynamoDB local
+                         #endpoint_url="http://localhost:8000",  # URL DynamoDB local
                           aws_access_key_id=acceskey,
                           aws_secret_access_key=secretaccess
                           )
@@ -190,7 +190,7 @@ ib = IB()
 async def startup_event():
     await ib.connectAsync(ip, port, clientId=clientId)
     #await ib.connectAsync('3.13.179.45', 4002, clientId=801)
-    #await ib.connectAsync('127.0.0.1', 4002, clientId=801)
+    #await ib.connectAsync('3.13.179.45', 4002, clientId=888) #await ib.connectAsync('127.0.0.1', 4002, clientId=801)
     #await ib.connectAsync('127.0.0.1', 7497, clientId=801)
 
 def clean_value(val):
@@ -588,6 +588,15 @@ async def close_position(conId: int):
         return {"status": "ok", "message": f"Orden enviada para cerrar {conId}"}
     return {"status": "error", "message": "Ticker no encontrado"}
 
+# Endpoint reset session
+@app.post("/reset_session_ts/{conId}")
+async def reset_session_ts(conId: int):
+    try:
+        st.session_state[f"fechainitstop_{conId}"] = None
+        return {"status": "ok", "message": f"Ok fecha_ts sesion {conId}"}
+    except Exception as e:
+        return {"status": "error", "message": f"Error fecha_ts sesion {e}"}
+
 # Endpoint para cerrar posición
 @app.post("/close_order/{permId}")
 async def close_order(permId: int):
@@ -621,11 +630,11 @@ async def get_data(ticker: str):
     return df.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo
 
 # Endpoint obtener datos total
-@app.get("/tickerdatamkt/{ticker}")
-async def get_data_ticker(ticker: str):
+@app.get("/tickerdatamkt/{conId}")
+async def get_data_ticker(conId: str):
     #===Obtener informacion en memoria de TICKER
     df_data = pd.DataFrame()
-    df_data=st.session_state.get(f"data_{ticker}")
+    df_data=st.session_state.get(f"data_{conId}")
     data = df_data.astype(object).where(pd.notnull(df_data), None).to_dict(orient="records")
     return JSONResponse(content=data)
 
@@ -668,8 +677,9 @@ async def get_data_all():
                 "modo_entrada": 2, #2: Registro Manual
                 "fecha_cierre": None
             })
-        
-    print("hito get_data_all 1")
+
+    #de la lista de tickers hacer la descarga por unica vez
+    dfdata_total = pd.DataFrame()
     for ticker in tickers:
         print("TICKER:", ticker)
         contract = Stock(ticker, 'SMART', 'USD')
@@ -686,11 +696,11 @@ async def get_data_all():
         )
        
         #return bars
-        df_datamkt = util.df(bars)
-        df_datamkt["date"] = df_datamkt["date"].dt.strftime("%Y-%m-%dT%H:%M:%S")
-        df_datamkt["ticker"]=ticker
+        df_data = util.df(bars)
+        df_data["date"] = df_data["date"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+        df_data["ticker"]=ticker
 
-        df_datamkt.sort_values(by=['date'])
+        df_data.sort_values(by=['date'])
         #EMAS
         filtro = df_variable.query("Ticker==@ticker and Tag=='long'")
         if filtro.shape[0]>0:
@@ -709,179 +719,187 @@ async def get_data_all():
             periodoLargo2 = 40
 
         #company = df_datamkt.query("companyName==@ticker").copy()
-        df_datamkt.sort_values(by=['date'])
+        df_data.sort_values(by=['date'])
 
-        df_datamkt['EMACorta'] = df_datamkt['low'].ewm(span=periodoCorto1, adjust=False).mean()
-        df_datamkt.dropna(inplace=False)
-        df_datamkt['EMALarga'] = df_datamkt['low'].ewm(span=periodoLargo1, adjust=False).mean()
-        df_datamkt.dropna(inplace=False)
+        df_data['EMACorta'] = df_data['low'].ewm(span=periodoCorto1, adjust=False).mean()
+        df_data.dropna(inplace=False)
+        df_data['EMALarga'] = df_data['low'].ewm(span=periodoLargo1, adjust=False).mean()
+        df_data.dropna(inplace=False)
 
-        df_datamkt['EMACorta2'] = df_datamkt['high'].ewm(span=periodoCorto2, adjust=False).mean()
-        df_datamkt.dropna(inplace=False)
-        df_datamkt['EMALarga2'] = df_datamkt['high'].ewm(span=periodoLargo2, adjust=False).mean()
-        df_datamkt.dropna(inplace=False)
+        df_data['EMACorta2'] = df_data['high'].ewm(span=periodoCorto2, adjust=False).mean()
+        df_data.dropna(inplace=False)
+        df_data['EMALarga2'] = df_data['high'].ewm(span=periodoLargo2, adjust=False).mean()
+        df_data.dropna(inplace=False)
         # fin EMAS
 
          #ATR indicador para Trailing Stop Loss
-        df_datamkt['ATR'] = ta2.volatility.average_true_range(df_datamkt['high'], df_datamkt['low'], df_datamkt['close'], window=14)        
+        df_data['ATR'] = ta2.volatility.average_true_range(df_data['high'], df_data['low'], df_data['close'], window=14)        
 
         #PIVOTS
         orders = [20,10,7]
         for ord in orders:
-            max_idx = argrelextrema(df_datamkt['high'].values, np.greater, order=ord)[0]
-            min_idx = argrelextrema(df_datamkt['low'].values, np.less, order=ord)[0]
+            max_idx = argrelextrema(df_data['high'].values, np.greater, order=ord)[0]
+            min_idx = argrelextrema(df_data['low'].values, np.less, order=ord)[0]
             # Aplicar el cálculo solo a los índices en la lista
-            df_datamkt.loc[df_datamkt.index[max_idx], 'pivotHigh'] =df_datamkt['high']+1e-3
-            df_datamkt.loc[df_datamkt.index[min_idx], 'pivotLow'] = df_datamkt['low']-(1e-3)
-            df_datamkt.loc[df_datamkt.index[max_idx], 'isPivot'] = 1
-            df_datamkt.loc[df_datamkt.index[min_idx], 'isPivot'] = 2
+            df_data.loc[df_data.index[max_idx], 'pivotHigh'] =df_data['high']+1e-3
+            df_data.loc[df_data.index[min_idx], 'pivotLow'] = df_data['low']-(1e-3)
+            df_data.loc[df_data.index[max_idx], 'isPivot'] = 1
+            df_data.loc[df_data.index[min_idx], 'isPivot'] = 2
 
-        #TRAILING STOP
-        #Generar Trailing Stop con ATR
-        atr_mult_sl_1 = multATR
-        trailing_stop = None
-      
-        #pricenow = df_datamkt["close"].iloc[-1]
-        df_datamkt['date'] = pd.to_datetime(df_datamkt.date)
-        for portfolio in portfolios:            
-            if (ticker==portfolio["Symbol"]):
-                df_datamkt["inicioTrade"] = 0
-                cnt_cerrar=0                
-                df3 = pd.DataFrame()
-                if portfolio["dateTime"]!=None:
-                    fechaEvaluar = pd.to_datetime(portfolio["dateTime"])
-                    print("h111 fechaEvaluar:",fechaEvaluar)
-                    print(df_datamkt["date"].dt.floor("h"))
+        df_data['date'] = pd.to_datetime(df_data.date)
+        if dfdata_total.shape[0]<=0:
+            dfdata_total = df_data
+        else:
+            dfdata_total = pd.concat([dfdata_total,df_data], ignore_index=True)
+            
+    print("hito get_data_all 1")
+    #TRAILING STOP
+    #Generar Trailing Stop con ATR
+    atr_mult_sl_1 = multATR
+    trailing_stop = None    
+    for portfolio in portfolios:
+        print("===Aqui CARLOSSS===")
+        ticker = portfolio["Symbol"]
+        #for i, row in enumerate(dfdata_total):
+        df_datamkt = dfdata_total[dfdata_total["ticker"]==ticker]
+        #if (ticker==portfolio["Symbol"]):
+        df_datamkt["inicioTrade"] = 0
+        cnt_cerrar=0
+        df3 = pd.DataFrame()
+        if portfolio["dateTime"]!=None:
+            fechaEvaluar = pd.to_datetime(portfolio["dateTime"])
+            print("h111 fechaEvaluar:",fechaEvaluar)
+            print(df_datamkt["date"].dt.floor("h"))
 
-                    print("fechaEvaluar floor:", fechaEvaluar.floor("h"), type(fechaEvaluar.floor("h")))
-                    print("unique horas:", df_datamkt["date"].dt.floor("h").unique())
+            print("fechaEvaluar floor:", fechaEvaluar.floor("h"), type(fechaEvaluar.floor("h")))
+            print("unique horas:", df_datamkt["date"].dt.floor("h").unique())
 
-                    #print("h22:",df_datamkt["date"].dt.tz)
-                    #print("h33:",fechaEvaluar.tzinfo)
+            #print("h22:",df_datamkt["date"].dt.tz)
+            #print("h33:",fechaEvaluar.tzinfo)
 
-                    #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
-                    mask = df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h")
-                    df_datamkt.loc[mask, "inicioTrade"] = 1
-                    indiceIni = df_datamkt.index[df_datamkt["inicioTrade"] == 1][0]
-                    #aqui
-                    #df3 = (df_datamkt.query("index>=@indiceIni")).copy()
-                right = portfolio["right"]
-                conId = portfolio["conId"]
-                tipo_stop = 1 #STOP LOSS ESTATICO
-                por_profit = portfolio["% PnL"]                
-                trailing_stop = None  # inicial
-                df_datamkt['trailing_stop'] = None               
-                
-                #print("hito111 Carlos")
-                #print (df_datamkt.info())                
-                
-                #===Obtener el inicio de Trailing Stop
-                fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
-                initstop=st.session_state.get(f"initstop_{conId}")
-                print("h1 fechainitstop:", fechainitstop)
+            #df_datamkt["inicioTrade"] = np.where(df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h"),  1, 0)
+            mask = df_datamkt["date"].dt.floor("h") == fechaEvaluar.floor("h")
+            df_datamkt.loc[mask, "inicioTrade"] = 1
+            indiceIni = df_datamkt.index[df_datamkt["inicioTrade"] == 1][0]
+            #aqui
+            #df3 = (df_datamkt.query("index>=@indiceIni")).copy()
+        right = portfolio["right"]
+        conId = portfolio["conId"]
+        tipo_stop = 1 #STOP LOSS ESTATICO
+        por_profit = portfolio["% PnL"]                
+        trailing_stop = None  # inicial
+        df_datamkt['trailing_stop'] = None               
+        
+        #print("hito111 Carlos")
+        #print (df_datamkt.info())                
+        
+        #===Obtener el inicio de Trailing Stop
+        fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
+        initstop=st.session_state.get(f"initstop_{conId}")
+        print("h1 fechainitstop:", fechainitstop)
+        if fechainitstop == None:
+            trades_dynamo = await get_posiciones_abiertas(conId)
+            if len(trades_dynamo)>0:
+                fechainitstop=trades_dynamo[0]["fecha_inicio_ts"]
+                initstop=trades_dynamo[0]["inicio_ts"]
+                print("h2 fechainitstop:", fechainitstop)
+                if fechainitstop!=None:
+                    st.session_state[f"fechainitstop_{conId}"] = fechainitstop
+
+                if initstop!=None:
+                    st.session_state[f"initstop_{conId}"] = initstop
+
                 if fechainitstop == None:
-                    trades_dynamo = await get_posiciones_abiertas(conId)
-                    if len(trades_dynamo)>0:
-                        fechainitstop=trades_dynamo[0]["fecha_inicio_ts"]
-                        initstop=trades_dynamo[0]["inicio_ts"]
-                        print("h2 fechainitstop:", fechainitstop)
-                        if fechainitstop!=None:
-                            st.session_state[f"fechainitstop_{conId}"] = fechainitstop
+                    print("h3 initstop:")
+                    if por_profit>=initstop: #ACTIVAR Trailing Stop
+                        if len(trades_dynamo)>0:                     
+                            for item in trades_dynamo:
+                                # Obtener la PK del item
+                                key ={
+                                    'conId': int(item['conId'])
+                                }
+                                update_expression= "SET fecha_inicio_ts = :new_fec"
 
-                        if initstop!=None:
-                            st.session_state[f"initstop_{conId}"] = initstop
+                                expression_values={
+                                    ':new_fec': now_ny_str
+                                }
+                                bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
+                            st.session_state[f"initstop_{conId}"] = now_ny_str
+        
+        #===Volver a consultar el inicio del trailing stop
+        fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
+        print ("fechainitstop:", fechainitstop, "tipo:",type(fechainitstop))
+        #ACTIVAR Trailing Stop
+        if fechainitstop!=None:                   
+            #Obtener Salida utilizando Trailing Stop ATR
+            fechaEvaluar = pd.to_datetime(fechainitstop, format="%d-%m-%Y %H:%M:%S")
+            #print("fechaEvaluar1:", fechaEvaluar)
+            #print("fechaEvaluar:",fechaEvaluar.floor("h"))
+            #print(df_datamkt["date"].dt.floor("h"))
+            df3 = df_datamkt[df_datamkt["date"].dt.floor("h") >= fechaEvaluar.floor("h")].copy()
+            #print ("=========df3==========")
+            #print(df3)
+            for k, row3 in df3.iterrows():
+                price = df_datamkt.loc[k, 'close']
+                priceLow = df_datamkt.loc[k, 'low']
+                priceHigh = df_datamkt.loc[k, 'high']
+                atr = df_datamkt.loc[k, 'ATR']
+                if right=="C":
+                    new_stop = price - float(atr_mult_sl_1) * atr
+                    new_stopLow = priceLow - float(atr_mult_sl_1) * atr
+                    new_stopHigh = priceHigh - float(atr_mult_sl_1) * atr
+                    if trailing_stop is None:
+                        trailing_stop = new_stop
+                    else:
+                        trailing_stop = max(trailing_stop, new_stop, new_stopLow, new_stopHigh)
 
-                        if fechainitstop == None:
-                            print("h3 initstop:")
-                            if por_profit>=initstop: #ACTIVAR Trailing Stop
-                                if len(trades_dynamo)>0:                     
-                                    for item in trades_dynamo:
-                                        # Obtener la PK del item
-                                        key ={
-                                            'conId': int(item['conId'])
-                                        }
-                                        update_expression= "SET fecha_inicio_ts = :new_fec"
-
-                                        expression_values={
-                                            ':new_fec': now_ny_str
-                                        }
-                                        bd.update_item(table_posiciones_abiertas, key,update_expression, expression_values)
-                                    st.session_state[f"initstop_{conId}"] = now_ny_str
+                    # Salida de la operación (long example)
+                    if price <= trailing_stop:                        
+                        cnt_cerrar = cnt_cerrar + 1
                 
-                #===Volver a consultar el inicio del trailing stop
-                fechainitstop=st.session_state.get(f"fechainitstop_{conId}")
-                print ("fechainitstop:", fechainitstop, "tipo:",type(fechainitstop))
-                #ACTIVAR Trailing Stop
-                if fechainitstop!=None:                   
-                    #Obtener Salida utilizando Trailing Stop ATR
-                    fechaEvaluar = pd.to_datetime(fechainitstop, format="%d-%m-%Y %H:%M:%S")
-                    #print("fechaEvaluar1:", fechaEvaluar)
-                    #print("fechaEvaluar:",fechaEvaluar.floor("h"))
-                    #print(df_datamkt["date"].dt.floor("h"))
-                    df3 = df_datamkt[df_datamkt["date"].dt.floor("h") >= fechaEvaluar.floor("h")].copy()
-                    #print ("=========df3==========")
-                    #print(df3)
-                    for k, row3 in df3.iterrows():
-                        price = df_datamkt.loc[k, 'close']
-                        priceLow = df_datamkt.loc[k, 'low']
-                        priceHigh = df_datamkt.loc[k, 'high']
-                        atr = df_datamkt.loc[k, 'ATR']
-                        if right=="C":
-                            new_stop = price - float(atr_mult_sl_1) * atr
-                            new_stopLow = priceLow - float(atr_mult_sl_1) * atr
-                            new_stopHigh = priceHigh - float(atr_mult_sl_1) * atr
-                            if trailing_stop is None:
-                                trailing_stop = new_stop
-                            else:
-                                trailing_stop = max(trailing_stop, new_stop, new_stopLow, new_stopHigh)
-
-                            # Salida de la operación (long example)
-                            if price <= trailing_stop:                        
-                                cnt_cerrar = cnt_cerrar + 1
-                        
-                        elif right=="P":
-                            new_stop = price + float(atr_mult_sl_1) * atr
-                            new_stopLow = priceLow + float(atr_mult_sl_1) * atr
-                            new_stopHigh = priceHigh + float(atr_mult_sl_1) * atr
-                            if trailing_stop is None:
-                                trailing_stop = new_stop
-                            else:
-                                trailing_stop = min(trailing_stop, new_stop, new_stopLow, new_stopHigh)
-                            # Salida de la operación (short example)
-                            if price >= trailing_stop:
-                                cnt_cerrar = cnt_cerrar + 1            
-                            
-                        #print("k:",k,",trailing_stop:", trailing_stop)
-                        df_datamkt.loc[k, 'trailing_stop'] = trailing_stop
-                
-                if cnt_cerrar>0:
-                    print("❌ Stop alcanzado, cerrando posición")
-                    try:
-                        cont = Stock(ticker, "SMART", "USD")
-                        valMercado = await mercado_abierto(cont,True)
-                        if valMercado == True:
-                            mensaje_cierre= await close_position(conId)
-                            print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
-                        else:
-                            print(f"Mercado Cerrado, debe cerrar:{ticker} - {conId}")
-                    except (ValueError, TypeError) as e:
-                        print("Error:", e)
-                
+                elif right=="P":
+                    new_stop = price + float(atr_mult_sl_1) * atr
+                    new_stopLow = priceLow + float(atr_mult_sl_1) * atr
+                    new_stopHigh = priceHigh + float(atr_mult_sl_1) * atr
+                    if trailing_stop is None:
+                        trailing_stop = new_stop
+                    else:
+                        trailing_stop = min(trailing_stop, new_stop, new_stopLow, new_stopHigh)
+                    # Salida de la operación (short example)
+                    if price >= trailing_stop:
+                        cnt_cerrar = cnt_cerrar + 1            
+                    
+                #print("k:",k,",trailing_stop:", trailing_stop)
+                df_datamkt.loc[k, 'trailing_stop'] = trailing_stop
+        
+        if cnt_cerrar>0:
+            print("❌ Stop alcanzado, cerrando posición")
+            try:
+                cont = Stock(ticker, "SMART", "USD")
+                valMercado = await mercado_abierto(cont,True)
+                if valMercado == True:
+                    mensaje_cierre= await close_position(conId)
+                    print(f"cerrar:{ticker} - {conId}: {mensaje_cierre}")
+                else:
+                    print(f"Mercado Cerrado, debe cerrar:{ticker} - {conId}")
+            except (ValueError, TypeError) as e:
+                print("Error:", e)
+            
         print("hito get_data_all 2")
         #     elif right=="P":
         df_datamkt["date"] = df_datamkt["date"].dt.strftime("%Y-%m-%dT%H:%M:%S") #volver a cambiar tipo de dato por el JSON
         print("df_datamkt:", df_datamkt.shape[0])
 
         #print(df_datamkt[["date","close","ATR","close","open","low","high","trailing_stop","inicioTrade"]].tail(40))
-        st.session_state[f"data_{ticker}"] = df_datamkt
+        st.session_state[f"data_{conId}"] = df_datamkt
 
         if df_total.shape[0]<=0:
             df_total = df_datamkt
         else:
             df_total = pd.concat([df_total,df_datamkt], ignore_index=True)
 
-        df_total = df_total.replace([np.inf, -np.inf], np.nan)
-        df_total = df_total.where(pd.notnull(df_total), None)        
+    df_total = df_total.replace([np.inf, -np.inf], np.nan)
+    df_total = df_total.where(pd.notnull(df_total), None)        
     #return df_total.to_dict(orient="records")  # porque FastAPI no puede devolver DataFrames directo    
     data = df_total.astype(object).where(pd.notnull(df_total), None).to_dict(orient="records")
     print("hito get_data_all 2222")
