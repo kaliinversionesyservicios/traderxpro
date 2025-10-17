@@ -74,7 +74,8 @@ match user:
             SCHEDULE_NAME="cron_scanner_bot_carlos_inicial_param_cero"
         else:
             SCHEDULE_NAME="cron_scanner_bot_carlos_secuencial_param_cero"
-        API_BASE="http://3.13.179.45:8000"
+        API_BASE="http://alb-ib-manager-carlos-953829293.us-east-2.elb.amazonaws.com"
+        #API_BASE="http://3.13.179.45:8000"
         #API_BASE = "http://127.0.0.1:8000"
         INSTANCE_ID="i-042bf49809ce84377"
     case "investyolanda1":
