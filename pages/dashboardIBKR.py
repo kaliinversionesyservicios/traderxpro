@@ -83,7 +83,8 @@ match user:
             SCHEDULE_NAME="cron_scanner_bot_yolanda_inicial_param_cero"
         else:
             SCHEDULE_NAME="cron_scanner_bot_yolanda_secuencial_param_cero"
-        API_BASE="http://3.140.173.63:8000"
+        API_BASE="http://alb-ib-manager-yolanda-2043558348.us-east-2.elb.amazonaws.com"
+        #API_BASE="http://3.140.173.63:8000"
         INSTANCE_ID="i-0ebd4e74d90835595"
     case "Ventanilla39":
         if hora== 13 and minuto>=30:
