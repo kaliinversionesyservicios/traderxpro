@@ -91,7 +91,8 @@ match user:
             SCHEDULE_NAME="cron_scanner_bot_elsy_inicial_param_cero"
         else:
             SCHEDULE_NAME="cron_scanner_bot_elsy_secuencial_param_cero"
-        API_BASE="http://3.149.168.211:8000"
+        API_BASE="http://alb-ib-manager-elsy-1978459337.us-east-2.elb.amazonaws.com"
+        #API_BASE="http://3.149.168.211:8000"
         INSTANCE_ID="i-0de59262800d37591"
     case "usuario04":
         SCHEDULE_NAME="cron_scanner_usuario04"
